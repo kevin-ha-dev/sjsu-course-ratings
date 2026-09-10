@@ -3,7 +3,10 @@
 import { Eye, EyeOff } from "lucide-react";
 import { useState, type FormEvent } from "react";
 
+import supabase from "@/lib/supabase/client";
+
 type AuthMode = "login" | "signup";
+
 
 function GoogleIcon() {
   return (
@@ -55,7 +58,19 @@ export function AuthForm() {
 
   async function handleGoogleSignIn() {
     setError(null);
-    setGoogleLoading(false);
+    setGoogleLoading(true);
+
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/dashboard`,
+      },
+    });
+
+    if (error) {
+      setError(error.message);
+      setGoogleLoading(false);
+    }
   }
 
   function toggleMode() {
