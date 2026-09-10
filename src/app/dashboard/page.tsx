@@ -4,10 +4,10 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 
-import supabase from "@/lib/supabase/client";
+import { createClient } from "@/lib/supabase/client";
 
 async function getDashboardUser() {
-  const { data } = await supabase.auth.getSession();
+  const { data } = await createClient().auth.getSession();
   return data.session?.user ?? null;
 }
 
@@ -19,6 +19,7 @@ export default function DashboardPage() {
   useEffect(() => {
     let cancelled = false;
 
+    const supabase = createClient();
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {

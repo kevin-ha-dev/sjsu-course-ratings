@@ -3,7 +3,7 @@
 import { Eye, EyeOff } from "lucide-react";
 import { useState, type FormEvent } from "react";
 
-import supabase from "@/lib/supabase/client";
+import { createClient } from "@/lib/supabase/client";
 
 type AuthMode = "login" | "signup";
 
@@ -60,6 +60,7 @@ export function AuthForm() {
     setError(null);
     setGoogleLoading(true);
 
+    const supabase = createClient();
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {

@@ -1,9 +1,21 @@
-import { createClient } from '@supabase/supabase-js'
+import { createClient as createSupabaseClient, type SupabaseClient } from "@supabase/supabase-js";
 
-export const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!
-)
+let browserClient: SupabaseClient | undefined;
 
-export default supabase
+export function createClient() {
+  if (browserClient) {
+    return browserClient;
+  }
 
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+
+  if (!url || !key) {
+    throw new Error(
+      "Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"
+    );
+  }
+
+  browserClient = createSupabaseClient(url, key);
+  return browserClient;
+}
