@@ -61,16 +61,13 @@ export default function DashboardPage() {
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col px-6 py-16">
-      <p className="text-sm font-medium tracking-wide text-brand">
-        San Jose State University
-      </p>
-      <h1 className="mt-2 text-3xl font-semibold tracking-tight text-text-primary">
+      <h1 className="text-3xl font-semibold tracking-tight text-text-primary">
         Dashboard
       </h1>
       <p className="mt-4 text-text-secondary">
         You are signed in
-        {user?.email ? ` as ${user.email}` : ""}. Course ratings will show up
-        here.
+        {user?.email ? ` as ${user.email}` : ""}. Placeholder home for ratings,
+        recent courses, and professors.
       </p>
     </main>
   );
