@@ -26,9 +26,6 @@ const popularClasses: ClassOffering[] = [
   { id: "cmpe-131", code: "CMPE 131", title: "Software Engineering I" },
   { id: "cs-151", code: "CS 151", title: "Object-Oriented Design" },
   { id: "cmpe-102", code: "CMPE 102", title: "Assembly Language Programming" },
-];
-
-const recentClasses: ClassOffering[] = [
   { id: "cs-149", code: "CS 149", title: "Operating Systems" },
   { id: "cs-46b", code: "CS 46B", title: "Introduction to Data Structures" },
   { id: "math-42", code: "MATH 42", title: "Discrete Mathematics" },
@@ -117,7 +114,7 @@ export default function DashboardPage() {
       <section aria-labelledby="pinned-classes">
         <h2
           id="pinned-classes"
-          className="border-b border-border px-6 py-4 text-[11px] font-medium tracking-[0.18em] text-text-muted uppercase"
+          className="border-b border-border px-6 py-4 text-xs font-medium tracking-[0.18em] text-text-secondary uppercase"
         >
           Pinned
         </h2>
@@ -126,50 +123,28 @@ export default function DashboardPage() {
             <ClassCell
               key={item.id}
               item={item}
-              className="border-b border-border sm:[&:not(:nth-child(2n))]:border-r lg:[&:not(:nth-child(4n))]:border-r"
+              className="border-border sm:max-lg:[&:not(:nth-child(2n))]:border-r lg:[&:not(:nth-child(4n))]:border-r"
             />
           ))}
         </ul>
       </section>
-      <div className="grid flex-1 grid-cols-1 lg:grid-cols-2">
-        <section
-          aria-labelledby="popular-classes"
-          className="border-border lg:border-r"
+      <section aria-labelledby="popular-classes" className="mt-8 flex-1">
+        <h2
+          id="popular-classes"
+          className="border-b border-border px-6 py-4 text-xs font-medium tracking-[0.18em] text-text-muted uppercase"
         >
-          <h2
-            id="popular-classes"
-            className="border-b border-border px-6 py-4 text-[11px] font-medium tracking-[0.18em] text-text-muted uppercase"
-          >
-            Popular
-          </h2>
-          <ul className="grid grid-cols-1 sm:grid-cols-2">
-            {popularClasses.map((item) => (
-              <ClassCell
-                key={item.id}
-                item={item}
-                className="border-b border-border sm:[&:not(:nth-child(2n))]:border-r"
-              />
-            ))}
-          </ul>
-        </section>
-        <section aria-labelledby="recent-classes">
-          <h2
-            id="recent-classes"
-            className="border-b border-border px-6 py-4 text-[11px] font-medium tracking-[0.18em] text-text-muted uppercase"
-          >
-            Recent
-          </h2>
-          <ul className="grid grid-cols-1 sm:grid-cols-2">
-            {recentClasses.map((item) => (
-              <ClassCell
-                key={item.id}
-                item={item}
-                className="border-b border-border sm:[&:not(:nth-child(2n))]:border-r"
-              />
-            ))}
-          </ul>
-        </section>
-      </div>
+          Popular
+        </h2>
+        <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+          {popularClasses.map((item) => (
+            <ClassCell
+              key={item.id}
+              item={item}
+              className="border-border border-b last:border-b-0 sm:max-lg:[&:nth-last-child(-n+2)]:border-b-0 sm:max-lg:[&:not(:nth-child(2n))]:border-r lg:[&:nth-last-child(-n+4)]:border-b-0 lg:[&:not(:nth-child(4n))]:border-r"
+            />
+          ))}
+        </ul>
+      </section>
     </main>
   );
 }
