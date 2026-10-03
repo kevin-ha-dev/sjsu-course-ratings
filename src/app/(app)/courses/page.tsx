@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 const placeholderCourses = [
+  { id: "cs-160", name: "CS 160 - Software Engineering" },
   { id: "cs-146", name: "CS 146 — Data Structures and Algorithms" },
   { id: "cs-149", name: "CS 149 — Operating Systems" },
   { id: "cmpe-131", name: "CMPE 131 — Software Engineering I" },
@@ -13,7 +14,7 @@ export default function CourseOfferingsPage() {
         Course offerings
       </h1>
       <p className="mt-4 text-text-secondary">
-        Placeholder list of courses. Open one to see professors who teach it.
+        Open a course to see ratings and student reviews.
       </p>
       <ul className="mt-8 flex flex-col gap-3">
         {placeholderCourses.map((course) => (
