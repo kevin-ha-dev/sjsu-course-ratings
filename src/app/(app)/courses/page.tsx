@@ -2,12 +2,12 @@ import Link from "next/link";
 
 import { PinCourseButton } from "@/components/pinned-courses";
 
-type CatalogCourse = {
+export type CatalogCourse = {
   code: string;
   title: string;
 };
 
-const lowerDivision: CatalogCourse[] = [
+export const lowerDivision: CatalogCourse[] = [
   { code: "CS 22A", title: "Python Programming for Non-Majors" },
   { code: "CS 22B", title: "Python Programming for Non-Majors II" },
   { code: "CS 46A", title: "Introduction to Programming" },
@@ -20,7 +20,7 @@ const lowerDivision: CatalogCourse[] = [
   { code: "CS 85A", title: "Special Topics" },
 ];
 
-const upperDivision: CatalogCourse[] = [
+export const upperDivision: CatalogCourse[] = [
   { code: "CS 100W", title: "Technical Writing" },
   { code: "CS 108", title: "Programming and Computing Workshop" },
   { code: "CS 116A", title: "Introduction to Computer Graphics" },
