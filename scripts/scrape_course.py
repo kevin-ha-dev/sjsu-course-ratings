@@ -34,7 +34,8 @@ def parse_content(url: str) -> list[CourseRecord]:
 
         if len(cells) != 5:
             continue
-
+        
+        # Initialize object
         course: CourseRecord = {
             "course": cells[0].get_text(strip=True),
             "section": cells[1].get_text(strip=True),

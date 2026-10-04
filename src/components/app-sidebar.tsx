@@ -10,13 +10,15 @@ import {
   CircuitBoard,
   Code,
   Cpu,
-  GraduationCap,
   LayoutDashboard,
+  Pin,
   type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+
+import { usePinnedCourses } from "@/components/pinned-courses";
 
 const majors: { label: string; icon: LucideIcon }[] = [
   { label: "Computer Science", icon: Code },
@@ -29,7 +31,6 @@ const majors: { label: string; icon: LucideIcon }[] = [
 const links = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/courses", label: "Course offerings", icon: BookOpen },
-  { href: "/professors", label: "Professors", icon: GraduationCap },
 ];
 
 function isCurrent(pathname: string, href: string) {
@@ -41,6 +42,8 @@ export function AppSidebar() {
   const [major, setMajor] = useState(majors[0].label);
   const MajorIcon = majors.find((option) => option.label === major)?.icon ?? Code;
   const [collapsed, setCollapsed] = useState(false);
+  const [pinnedOpen, setPinnedOpen] = useState(true);
+  const { courses: pinnedCourses } = usePinnedCourses();
 
   return (
     <aside
@@ -118,6 +121,49 @@ export function AppSidebar() {
             </Link>
           );
         })}
+        {collapsed ? null : (
+          <div className="mt-8 flex min-h-0 flex-1 flex-col">
+            <button
+              type="button"
+              aria-expanded={pinnedOpen}
+              aria-controls="pinned-courses"
+              onClick={() => setPinnedOpen((value) => !value)}
+              className="flex w-full items-center justify-between px-3 text-xs font-medium tracking-[0.18em] text-text-muted uppercase"
+            >
+              Pinned
+              <ChevronRight
+                className={`size-3.5 transition-transform duration-200 ${
+                  pinnedOpen ? "rotate-90" : ""
+                }`}
+                aria-hidden
+              />
+            </button>
+            {pinnedOpen && pinnedCourses.length === 0 ? (
+              <p className="mt-1 flex items-center gap-2 px-3 py-2 text-sm text-text-muted">
+                <Pin className="size-4 shrink-0" aria-hidden />
+                Nothing pinned
+              </p>
+            ) : null}
+            {pinnedOpen && pinnedCourses.length > 0 ? (
+              <ul
+                id="pinned-courses"
+                className="mt-1 flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto"
+              >
+                {pinnedCourses.map((course) => (
+                  <li key={course.id}>
+                    <Link
+                      href={`/courses/${course.id}`}
+                      className="flex items-center gap-2 rounded-full px-3 py-2 text-text-primary hover:bg-surface-muted hover:text-brand"
+                    >
+                      <Pin className="size-4 shrink-0 fill-current" aria-hidden />
+                      <span className="truncate">{course.code}</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </div>
+        )}
       </nav>
       <div
         className={`mt-auto flex justify-end px-3 pt-3 ${
