@@ -3,7 +3,7 @@
 import { ArrowLeft } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 
-const rootPages = new Set(["/dashboard", "/courses"]);
+const rootPages = new Set(["/dashboard", "/courses", "/community"]);
 
 export function BackButton() {
   const pathname = usePathname();
