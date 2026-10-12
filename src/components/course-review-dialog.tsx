@@ -117,6 +117,7 @@ export function CourseReviewDialog({
     const attendance = data.get("attendanceMandatory");
     const professor = String(data.get("professor") ?? "");
     const comment = String(data.get("comment") ?? "").trim();
+    if (comment.length > 4000) nextErrors.comment = "Keep your review to 4,000 characters or fewer.";
     if (attendance !== null && attendance !== "yes" && attendance !== "no") nextErrors.attendanceMandatory = "Choose Yes or No.";
     if (!professors.includes(professor)) nextErrors.professor = "Choose a professor.";
     setErrors(nextErrors);
@@ -179,7 +180,8 @@ export function CourseReviewDialog({
         </fieldset>
         <div className="min-w-0 sm:col-span-2">
           <label htmlFor="review-comment" className="mb-2 block text-sm font-medium">Write a Review <span className="ml-1 text-xs font-normal text-text-muted" aria-hidden>Optional</span></label>
-          <textarea id="review-comment" name="comment" defaultValue={review?.comment ?? ""} rows={3} className="block min-h-24 w-full resize-y rounded-md border border-border bg-white p-3 text-base leading-6 focus-visible:outline-2 focus-visible:outline-offset-2 sm:text-sm" />
+          <textarea id="review-comment" name="comment" defaultValue={review?.comment ?? ""} maxLength={4000} aria-invalid={Boolean(errors.comment)} aria-describedby={errors.comment ? "comment-error" : undefined} rows={3} className="block min-h-24 w-full resize-y rounded-md border border-border bg-white p-3 text-base leading-6 focus-visible:outline-2 focus-visible:outline-offset-2 sm:text-sm" />
+          {errors.comment && <p id="comment-error" className="mt-1 text-xs text-error">{errors.comment}</p>}
         </div>
         <div className="flex flex-wrap items-center justify-end gap-3 border-t border-border pt-4 sm:col-span-2">
           <button type="button" onClick={onDismiss} className="px-3 py-2.5 text-sm text-text-muted underline-offset-4 hover:underline focus-visible:outline-2">Cancel</button>

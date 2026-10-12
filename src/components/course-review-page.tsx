@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, ChevronRight, Sparkles } from "lucide-react";
+import { ArrowRight, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -8,6 +8,7 @@ import { CourseOverviewHeader } from "@/components/course-overview-header";
 import { CourseDetails } from "@/components/course-details";
 import { CourseReviewDialog } from "@/components/course-review-dialog";
 import { CourseReviewItem } from "@/components/course-review-item";
+import { CourseReviewSummary } from "@/components/course-review-summary";
 import { StarRating } from "@/components/star-rating";
 import { DEMO_USER_ID, type Course, type CourseReview, type ReviewValues } from "@/lib/course-review-data";
 
@@ -18,7 +19,6 @@ export function CourseReviewPage({ course }: { course: Course }) {
   const count = reviews.length;
   const average = count ? (reviews.reduce((sum, review) => sum + review.overallRating, 0) / count).toFixed(1) : null;
   const difficulty = count ? Math.round(reviews.reduce((sum, review) => sum + review.difficulty, 0) / count / 5 * 100) : null;
-  const summaryIsCurrent = reviews === course.reviews;
 
   function saveReview(values: ReviewValues) {
     const existing = dialog?.review;
@@ -54,17 +54,7 @@ export function CourseReviewPage({ course }: { course: Course }) {
             <span>{difficulty === null ? "Difficulty not rated" : `${difficulty}% difficulty`}</span>
           </div>
         </header>
-        <section aria-labelledby="review-summary-title" className="mt-7 border-l-2 border-accent py-3 pl-4">
-          <div className="flex flex-wrap items-center gap-2">
-            <Sparkles className="size-4 text-[#946500]" aria-hidden />
-            <h2 id="review-summary-title" className="text-sm font-semibold">AI review summary</h2>
-            <span className="rounded bg-surface-muted px-1.5 py-0.5 text-[11px] text-text-muted">Sample</span>
-          </div>
-          <p className="mt-2 max-w-[760px] text-sm leading-6 text-text-muted">
-            {!count ? "No reviews to summarize yet." : !course.sampleSummary ? "No sample summary available for this course." : !summaryIsCurrent ? "Reviews have changed. The sample summary is out of date." : course.sampleSummary}
-          </p>
-          {course.sampleSummary && summaryIsCurrent && count > 0 && <p className="mt-2 text-xs text-text-muted">Based on {count} sample {count === 1 ? "review" : "reviews"}</p>}
-        </section>
+        <CourseReviewSummary key={JSON.stringify(reviews)} reviews={reviews} />
         <CourseDetails reviews={reviews} professors={course.professors} />
         <section aria-labelledby="reviews-title" className="mt-6">
           <div className="mb-2 flex min-h-10 flex-wrap items-center justify-between gap-x-4 gap-y-2">

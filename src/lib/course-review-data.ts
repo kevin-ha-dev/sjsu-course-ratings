@@ -20,7 +20,6 @@ export type Course = {
   title: string;
   professors: string[];
   reviews: CourseReview[];
-  sampleSummary?: string;
 };
 
 export const DEMO_USER_ID = "demo-student";
@@ -32,8 +31,6 @@ export const courses: Course[] = [
     code: "CS 160",
     title: "Software Engineering",
     professors: ["Dominic Abucejo", "Jane Smith"],
-    sampleSummary:
-      "Students value the hands-on team project and practical software development experience. The workload is moderate overall, with early planning and steady teamwork making the project more manageable.",
     reviews: [
       {
         id: "cs-160-1",
