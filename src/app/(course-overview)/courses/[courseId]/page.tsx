@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 
 import { CourseReviewPage } from "@/components/course-review-page";
 import { courses, type Course } from "@/lib/course-review-data";
-import { lowerDivision, upperDivision } from "../page";
+import { lowerDivision, upperDivision } from "@/lib/course-catalog";
 
 function courseFromCatalog(courseId: string): Course | null {
   const listed = [...lowerDivision, ...upperDivision].find(

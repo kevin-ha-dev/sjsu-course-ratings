@@ -1,9 +1,10 @@
 export type ReviewValues = {
   overallRating: number;
   difficulty: number;
-  careerRelevance: number;
-  attendanceMandatory: boolean;
-  gradeLeniency: number;
+  workload: number;
+  careerRelevance: number | null;
+  attendanceMandatory: boolean | null;
+  gradeLeniency: number | null;
   professor: string;
   comment: string;
 };
@@ -19,6 +20,7 @@ export type Course = {
   title: string;
   professors: string[];
   reviews: CourseReview[];
+  sampleSummary?: string;
 };
 
 export const DEMO_USER_ID = "demo-student";
@@ -30,12 +32,15 @@ export const courses: Course[] = [
     code: "CS 160",
     title: "Software Engineering",
     professors: ["Dominic Abucejo", "Jane Smith"],
+    sampleSummary:
+      "Students value the hands-on team project and practical software development experience. The workload is moderate overall, with early planning and steady teamwork making the project more manageable.",
     reviews: [
       {
         id: "cs-160-1",
         authorId: "student-1",
         overallRating: 5,
         difficulty: 3,
+        workload: 3,
         careerRelevance: 5,
         attendanceMandatory: true,
         gradeLeniency: 4,
@@ -48,6 +53,7 @@ export const courses: Course[] = [
         authorId: DEMO_USER_ID,
         overallRating: 4,
         difficulty: 4,
+        workload: 4,
         careerRelevance: 5,
         attendanceMandatory: true,
         gradeLeniency: 3,
@@ -60,6 +66,7 @@ export const courses: Course[] = [
         authorId: "student-2",
         overallRating: 4,
         difficulty: 2,
+        workload: 2,
         careerRelevance: 4,
         attendanceMandatory: false,
         gradeLeniency: 4,
