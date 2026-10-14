@@ -2,18 +2,13 @@
 
 import {
   BookOpen,
-  Braces,
-  Briefcase,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
-  CircuitBoard,
   Code,
-  Cpu,
   LayoutDashboard,
   Pin,
   Users,
-  type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -21,13 +16,7 @@ import { useState } from "react";
 
 import { usePinnedCourses } from "@/components/pinned-courses";
 
-const majors: { label: string; icon: LucideIcon }[] = [
-  { label: "Computer Science", icon: Code },
-  { label: "Computer Engineering", icon: Cpu },
-  { label: "Software Engineering", icon: Braces },
-  { label: "Electrical Engineering", icon: CircuitBoard },
-  { label: "Business Administration", icon: Briefcase },
-];
+const major = "Computer Science";
 
 const links = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -41,11 +30,9 @@ function isCurrent(pathname: string, href: string) {
 
 export function AppSidebar() {
   const pathname = usePathname();
-  const [major, setMajor] = useState(majors[0].label);
-  const MajorIcon = majors.find((option) => option.label === major)?.icon ?? Code;
   const [collapsed, setCollapsed] = useState(false);
   const [pinnedOpen, setPinnedOpen] = useState(true);
-  const { courses: pinnedCourses } = usePinnedCourses();
+  const { courses: pinnedCourses, ready: pinsReady } = usePinnedCourses();
 
   return (
     <aside
@@ -59,39 +46,14 @@ export function AppSidebar() {
             className="flex size-9 w-full items-center justify-center text-xs font-semibold text-brand"
             title={major}
           >
-            {major
-              .split(" ")
-              .map((word) => word[0])
-              .join("")}
+            CS
           </span>
         ) : (
-          <>
-            <label htmlFor="major" className="sr-only">
-              Major
-            </label>
-            <div className="relative w-full">
-              <MajorIcon
-                className="pointer-events-none absolute top-1/2 left-0 size-4 -translate-y-1/2 text-text-primary"
-                aria-hidden
-              />
-              <select
-                id="major"
-                value={major}
-                onChange={(event) => setMajor(event.target.value)}
-                className="h-9 w-full appearance-none bg-transparent py-2 pr-6 pl-6 text-sm font-medium text-text-primary outline-none"
-              >
-                {majors.map((option) => (
-                  <option key={option.label} value={option.label}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown
-                className="pointer-events-none absolute top-1/2 right-0 size-4 -translate-y-1/2 text-text-primary"
-                aria-hidden
-              />
-            </div>
-          </>
+          <div className="flex h-9 w-full items-center gap-2 text-sm font-medium text-text-primary">
+            <Code className="size-4 shrink-0" aria-hidden />
+            <span className="min-w-0 flex-1 truncate">{major}</span>
+            <ChevronDown className="size-4 shrink-0" aria-hidden />
+          </div>
         )}
       </div>
       <nav
@@ -140,7 +102,7 @@ export function AppSidebar() {
                 aria-hidden
               />
             </button>
-            {pinnedOpen && pinnedCourses.length === 0 ? (
+            {pinnedOpen && pinsReady && pinnedCourses.length === 0 ? (
               <p className="mt-1 flex items-center gap-2 px-3 py-2 text-sm text-text-muted">
                 <Pin className="size-4 shrink-0" aria-hidden />
                 Nothing pinned

@@ -74,13 +74,18 @@ export function CourseReviewDialog({
   review: CourseReview | null;
   courseLabel: string;
   professors: string[];
-  onSave: (values: ReviewValues) => void;
+  onSave: (values: ReviewValues) => Promise<void>;
   onDismiss: () => void;
 }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [formError, setFormError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const [attendanceSelection, setAttendanceSelection] = useState<boolean | null>(review?.attendanceMandatory ?? null);
+  const professorOptions = review?.professor && !professors.includes(review.professor)
+    ? [review.professor, ...professors]
+    : professors;
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -101,7 +106,7 @@ export function CourseReviewDialog({
     }
   }, [errors]);
 
-  function submitReview(event: FormEvent<HTMLFormElement>) {
+  async function submitReview(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
     const nextErrors: Record<string, string> = {};
@@ -119,20 +124,28 @@ export function CourseReviewDialog({
     const comment = String(data.get("comment") ?? "").trim();
     if (comment.length > 4000) nextErrors.comment = "Keep your review to 4,000 characters or fewer.";
     if (attendance !== null && attendance !== "yes" && attendance !== "no") nextErrors.attendanceMandatory = "Choose Yes or No.";
-    if (!professors.includes(professor)) nextErrors.professor = "Choose a professor.";
+    if (!professorOptions.includes(professor)) nextErrors.professor = "Choose a professor.";
     setErrors(nextErrors);
+    setFormError("");
     if (Object.keys(nextErrors).length) return;
 
-    onSave({
-      overallRating: Number(data.get("overallRating")),
-      difficulty: Number(data.get("difficulty")),
-      workload: Number(data.get("workload")),
-      careerRelevance: data.has("careerRelevance") ? Number(data.get("careerRelevance")) : null,
-      gradeLeniency: data.has("gradeLeniency") ? Number(data.get("gradeLeniency")) : null,
-      attendanceMandatory: attendance === null ? null : attendance === "yes",
-      professor,
-      comment,
-    });
+    setSubmitting(true);
+    try {
+      await onSave({
+        overallRating: Number(data.get("overallRating")),
+        difficulty: Number(data.get("difficulty")),
+        workload: Number(data.get("workload")),
+        careerRelevance: data.has("careerRelevance") ? Number(data.get("careerRelevance")) : null,
+        gradeLeniency: data.has("gradeLeniency") ? Number(data.get("gradeLeniency")) : null,
+        attendanceMandatory: attendance === null ? null : attendance === "yes",
+        professor,
+        comment,
+      });
+    } catch (error) {
+      setFormError(error instanceof Error ? error.message : "Could not save your review.");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -152,14 +165,15 @@ export function CourseReviewDialog({
       </div>
       <p className="mt-1 mb-6 text-xs leading-5 text-text-muted">{courseLabel}</p>
       <form ref={formRef} noValidate onSubmit={submitReview} className="grid w-full grid-cols-1 gap-x-5 gap-y-5 sm:grid-cols-2">
-        {Object.keys(errors).length > 0 && <p role="alert" className="text-sm text-error sm:col-span-2">Please complete the highlighted fields.</p>}
+        {(Object.keys(errors).length > 0 || formError) && <p role="alert" className="text-sm text-error sm:col-span-2">{formError || "Please complete the highlighted fields."}</p>}
         {ratingFields.slice(0, 3).map((field) => <RatingField key={field.name} field={field} value={review?.[field.name]} error={errors[field.name]} />)}
         <div className="min-w-0 sm:col-span-2">
           <label htmlFor="review-professor" className="mb-2 block text-sm font-medium">Professor <span className="text-red-600" aria-hidden>*</span></label>
-          <select id="review-professor" name="professor" defaultValue={review?.professor ?? ""} required aria-invalid={Boolean(errors.professor)} aria-describedby={errors.professor ? "professor-error" : undefined} className="min-h-10 w-full rounded-md border border-border bg-white px-3 text-base focus-visible:outline-2 focus-visible:outline-offset-2 sm:text-sm">
-            <option value="" disabled>Select a professor</option>
-            {professors.map((professor) => <option key={professor}>{professor}</option>)}
+          <select id="review-professor" name="professor" defaultValue={review?.professor ?? ""} required disabled={professorOptions.length === 0} aria-invalid={Boolean(errors.professor)} aria-describedby={errors.professor ? "professor-error" : professorOptions.length === 0 ? "professor-empty" : undefined} className="min-h-10 w-full rounded-md border border-border bg-white px-3 text-base focus-visible:outline-2 focus-visible:outline-offset-2 disabled:bg-surface-muted disabled:text-text-muted sm:text-sm">
+            <option value="" disabled>{professorOptions.length === 0 ? "No professors listed" : "Select a professor"}</option>
+            {professorOptions.map((professor) => <option key={professor}>{professor}</option>)}
           </select>
+          {professorOptions.length === 0 && <p id="professor-empty" className="mt-1 text-xs text-text-muted">No professors are listed for this class.</p>}
           {errors.professor && <p id="professor-error" className="mt-1 text-xs text-error">{errors.professor}</p>}
         </div>
         {ratingFields.slice(3).map((field) => <RatingField key={field.name} field={field} value={review?.[field.name]} error={errors[field.name]} />)}
@@ -184,9 +198,9 @@ export function CourseReviewDialog({
           {errors.comment && <p id="comment-error" className="mt-1 text-xs text-error">{errors.comment}</p>}
         </div>
         <div className="flex flex-wrap items-center justify-end gap-3 border-t border-border pt-4 sm:col-span-2">
-          <button type="button" onClick={onDismiss} className="px-3 py-2.5 text-sm text-text-muted underline-offset-4 hover:underline focus-visible:outline-2">Cancel</button>
-          <button type="submit" className="inline-flex items-center gap-2 rounded-md bg-brand px-4 py-2.5 text-sm font-medium text-white hover:bg-neutral-700 focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-black">
-            {review ? "Save Changes" : "Submit Review"}
+          <button type="button" onClick={onDismiss} disabled={submitting} className="px-3 py-2.5 text-sm text-text-muted underline-offset-4 hover:underline focus-visible:outline-2 disabled:opacity-60">Cancel</button>
+          <button type="submit" disabled={submitting} aria-busy={submitting} className="inline-flex items-center gap-2 rounded-md bg-brand px-4 py-2.5 text-sm font-medium text-white hover:bg-neutral-700 focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-black disabled:opacity-70">
+            {submitting ? "Submitting..." : review ? "Save Changes" : "Submit Review"}
             <ArrowRight className="size-4" aria-hidden />
           </button>
         </div>

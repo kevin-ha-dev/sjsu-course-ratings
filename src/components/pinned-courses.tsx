@@ -5,11 +5,12 @@ import {
   createContext,
   useContext,
   useEffect,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
 
-const STORAGE_KEY = "pinned-courses";
+import { createClient } from "@/lib/supabase/client";
 
 export type PinnedCourse = {
   id: string;
@@ -19,6 +20,7 @@ export type PinnedCourse = {
 
 type PinnedCoursesContextValue = {
   courses: PinnedCourse[];
+  ready: boolean;
   isPinned: (id: string) => boolean;
   toggle: (course: PinnedCourse) => void;
 };
@@ -27,62 +29,145 @@ const PinnedCoursesContext = createContext<PinnedCoursesContextValue | null>(
   null,
 );
 
-function readPinnedCourses() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) {
-      return [];
-    }
-    const parsed: unknown = JSON.parse(raw);
-    if (!Array.isArray(parsed)) {
-      return [];
-    }
-    return parsed.filter(
-      (item): item is PinnedCourse =>
-        typeof item === "object" &&
-        item !== null &&
-        "id" in item &&
-        "code" in item &&
-        "title" in item &&
-        typeof item.id === "string" &&
-        typeof item.code === "string" &&
-        typeof item.title === "string",
-    );
-  } catch {
-    return [];
-  }
+function isPinnedCourse(value: unknown): value is PinnedCourse {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "id" in value &&
+    "code" in value &&
+    "title" in value &&
+    typeof value.id === "string" &&
+    typeof value.code === "string" &&
+    typeof value.title === "string"
+  );
+}
+
+async function accessToken() {
+  const { data } = await createClient().auth.getSession();
+  return data.session?.access_token ?? null;
+}
+
+async function loadPins(token: string) {
+  const response = await fetch("/api/pinned-courses", {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const body = (await response.json().catch(() => null)) as { courses?: unknown } | null;
+  if (!response.ok || !Array.isArray(body?.courses)) return [];
+  return body.courses.filter(isPinnedCourse);
 }
 
 export function PinnedCoursesProvider({ children }: { children: ReactNode }) {
   const [courses, setCourses] = useState<PinnedCourse[]>([]);
   const [ready, setReady] = useState(false);
+  const coursesRef = useRef(courses);
+  const writes = useRef(Promise.resolve());
+  coursesRef.current = courses;
 
   useEffect(() => {
-    setCourses(readPinnedCourses());
-    setReady(true);
+    let cancelled = false;
+    const supabase = createClient();
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event !== "INITIAL_SESSION" && event !== "SIGNED_IN" && event !== "SIGNED_OUT") {
+        return;
+      }
+
+      const token = session?.access_token;
+      if (!token) {
+        coursesRef.current = [];
+        setCourses([]);
+        setReady(true);
+        return;
+      }
+
+      void loadPins(token)
+        .then((next) => {
+          if (cancelled) return;
+          coursesRef.current = next;
+          setCourses(next);
+          setReady(true);
+        })
+        .catch(() => {
+          if (cancelled) return;
+          coursesRef.current = [];
+          setCourses([]);
+          setReady(true);
+        });
+    });
+
+    return () => {
+      cancelled = true;
+      subscription.unsubscribe();
+    };
   }, []);
 
-  useEffect(() => {
-    if (!ready) {
-      return;
-    }
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(courses));
-  }, [courses, ready]);
+  function replaceCourses(next: PinnedCourse[]) {
+    coursesRef.current = next;
+    setCourses(next);
+  }
 
   function isPinned(id: string) {
     return courses.some((course) => course.id === id);
   }
 
   function toggle(course: PinnedCourse) {
-    setCourses((current) =>
-      current.some((item) => item.id === course.id)
-        ? current.filter((item) => item.id !== course.id)
-        : [...current, course],
+    const shouldPin = !coursesRef.current.some((item) => item.id === course.id);
+    replaceCourses(
+      shouldPin
+        ? [...coursesRef.current, course]
+        : coursesRef.current.filter((item) => item.id !== course.id),
     );
+
+    writes.current = writes.current
+      .then(async () => {
+        try {
+          const token = await accessToken();
+          if (!token) {
+            revert();
+            return;
+          }
+
+          const response = await fetch("/api/pinned-courses", {
+            method: shouldPin ? "POST" : "DELETE",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ code: course.code }),
+          });
+
+          if (!response.ok) {
+            revert();
+            return;
+          }
+
+          if (!shouldPin) return;
+          const body = (await response.json().catch(() => null)) as { course?: unknown } | null;
+          const saved = body?.course;
+          if (!isPinnedCourse(saved)) return;
+          if (!coursesRef.current.some((item) => item.id === course.id)) return;
+          replaceCourses(
+            coursesRef.current.map((item) => (item.id === course.id ? saved : item)),
+          );
+        } catch {
+          revert();
+        }
+      })
+      .catch(() => {});
+
+    function revert() {
+      if (coursesRef.current.some((item) => item.id === course.id) !== shouldPin) return;
+      replaceCourses(
+        shouldPin
+          ? coursesRef.current.filter((item) => item.id !== course.id)
+          : [...coursesRef.current, course],
+      );
+    }
   }
 
   return (
-    <PinnedCoursesContext.Provider value={{ courses, isPinned, toggle }}>
+    <PinnedCoursesContext.Provider value={{ courses, ready, isPinned, toggle }}>
       {children}
     </PinnedCoursesContext.Provider>
   );

@@ -65,7 +65,7 @@ export function CourseReviewSummary({ reviews }: { reviews: CourseReview[] }) {
         )}
       </div>
       <div role="status" aria-live="polite" aria-busy={loading}>
-        <p className="mt-2 max-w-[760px] text-sm leading-6 break-words text-text-muted">
+        <p className="mt-2 text-sm leading-6 break-words text-text-muted">
           {!reviews.length ? "No reviews to summarize yet." : loading ? "Preparing a summary..." : summary || "No summary generated yet."}
         </p>
         {summary && (

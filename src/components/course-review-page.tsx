@@ -2,39 +2,99 @@
 
 import { ArrowRight, ChevronRight } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
-import { CourseOverviewHeader } from "@/components/course-overview-header";
 import { CourseDetails } from "@/components/course-details";
 import { CourseReviewDialog } from "@/components/course-review-dialog";
 import { CourseReviewItem } from "@/components/course-review-item";
 import { CourseReviewSummary } from "@/components/course-review-summary";
 import { StarRating } from "@/components/star-rating";
 import { DEMO_USER_ID, type Course, type CourseReview, type ReviewValues } from "@/lib/course-review-data";
+import { createClient } from "@/lib/supabase/client";
 
 export function CourseReviewPage({ course }: { course: Course }) {
   const [reviews, setReviews] = useState(course.reviews);
   const [dialog, setDialog] = useState<{ review: CourseReview | null } | null>(null);
   const [notice, setNotice] = useState("");
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const count = reviews.length;
   const average = count ? (reviews.reduce((sum, review) => sum + review.overallRating, 0) / count).toFixed(1) : null;
   const difficulty = count ? Math.round(reviews.reduce((sum, review) => sum + review.difficulty, 0) / count / 5 * 100) : null;
 
-  function saveReview(values: ReviewValues) {
+  useEffect(() => {
+    let cancelled = false;
+    const fixtureIds = new Set(course.reviews.map((review) => review.id));
+
+    createClient().auth.getSession().then(({ data }) => {
+      if (!cancelled) setCurrentUserId(data.session?.user.id ?? null);
+    }).catch(() => {
+      if (!cancelled) setCurrentUserId(null);
+    });
+
+    fetch(`/api/reviews?course=${encodeURIComponent(course.code)}`)
+      .then(async (response) => {
+        if (!response.ok) return null;
+        return response.json() as Promise<{ reviews?: CourseReview[] }>;
+      })
+      .then((body) => {
+        if (cancelled || !body || !Array.isArray(body.reviews)) return;
+        const saved = body.reviews;
+        const savedIds = new Set(saved.map((review) => review.id));
+        setReviews((current) => {
+          const pending = current.filter((review) => !savedIds.has(review.id) && !fixtureIds.has(review.id));
+          return [...saved, ...pending, ...course.reviews];
+        });
+      })
+      .catch(() => {});
+
+    return () => {
+      cancelled = true;
+    };
+  }, [course.code, course.reviews]);
+
+  async function saveReview(values: ReviewValues) {
     const existing = dialog?.review;
-    if (existing) {
+    const savedReview = existing !== null && existing !== undefined && /^[1-9]\d*$/.test(existing.id);
+    if (existing && !savedReview) {
       setReviews((current) => current.map((review) => review.id === existing.id ? { ...review, ...values } : review));
-    } else {
-      setReviews((current) => [{ ...values, id: crypto.randomUUID(), authorId: DEMO_USER_ID }, ...current]);
+      setDialog(null);
+      setNotice("Review updated.");
+      return;
     }
+
+    const { data } = await createClient().auth.getSession();
+    const token = data.session?.access_token;
+    if (!token) throw new Error("Sign in to submit a review.");
+
+    const response = await fetch("/api/reviews", {
+      method: savedReview ? "PATCH" : "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        ...values,
+        courseCode: course.code,
+        courseTitle: course.title,
+        ...(savedReview && existing ? { id: Number(existing.id) } : {}),
+      }),
+    });
+    const body = await response.json().catch(() => null) as { error?: string; review?: CourseReview } | null;
+    if (!response.ok || !body?.review) {
+      throw new Error(body?.error ?? "Could not save your review.");
+    }
+
+    const review = body.review;
+    setReviews((current) => savedReview && existing
+      ? current.map((item) => item.id === existing.id ? review : item)
+      : [review, ...current]);
     setDialog(null);
-    setNotice(existing ? "Review updated." : "Review added.");
+    setNotice(savedReview ? "Review updated." : "Review added.");
   }
 
   return (
-    <div className="min-h-dvh bg-white font-[Arial,Helvetica,sans-serif] text-text-primary [--border:#e2e4e6] [--brand:#202124] [--surface-muted:#f5f6f7] [--text-muted:#62676c]">
-      <CourseOverviewHeader courseCode={course.code} />
-      <main className="mx-auto w-full min-w-0 max-w-[1000px] px-5 pt-6 pb-12 sm:px-9 sm:pt-8">
+    <div className="flex min-h-0 flex-1 flex-col bg-white font-[Arial,Helvetica,sans-serif] text-text-primary [--border:#e2e4e6] [--brand:#202124] [--surface-muted:#f5f6f7] [--text-muted:#62676c]">
+      <main className="w-full min-w-0 px-6 pt-6 pb-12 sm:px-10 sm:pt-8 lg:px-12">
         <nav aria-label="Breadcrumb" className="mb-6 flex items-center gap-2 text-xs text-text-muted">
           <Link href="/courses" className="underline-offset-4 hover:text-text-primary hover:underline focus-visible:outline-2 focus-visible:outline-offset-4">Courses</Link>
           <ChevronRight className="size-3" aria-hidden />
@@ -83,7 +143,7 @@ export function CourseReviewPage({ course }: { course: Course }) {
           {reviews.length ? (
             <ul aria-label="Course reviews">
               {reviews.map((review) => (
-                <CourseReviewItem key={review.id} review={review} onEdit={review.authorId === DEMO_USER_ID ? () => setDialog({ review }) : undefined} />
+                <CourseReviewItem key={review.id} review={review} onEdit={review.authorId === currentUserId || review.authorId === DEMO_USER_ID ? () => setDialog({ review }) : undefined} />
               ))}
             </ul>
           ) : (
