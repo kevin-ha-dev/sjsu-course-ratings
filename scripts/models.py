@@ -11,15 +11,11 @@ class CourseRecord(TypedDict):
 class Course(TypedDict):
     department: str
     course_number: str
-    title: str | None
-    description: str | None
+    title: str
 
 
 class Professor(TypedDict):
-    first_name: str | None
-    last_name: str
-    department: str
-    email: str | None
+    name: str
 
 
 class CourseOffering(TypedDict):
