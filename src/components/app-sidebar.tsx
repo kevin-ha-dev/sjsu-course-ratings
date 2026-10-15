@@ -16,7 +16,7 @@ import { useState } from "react";
 
 import { usePinnedCourses } from "@/components/pinned-courses";
 
-const major = "Computer Science";
+const title = "SJSU Course Ratings";
 
 const links = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -36,22 +36,22 @@ export function AppSidebar() {
 
   return (
     <aside
-      className={`flex shrink-0 flex-col border-r border-border bg-[#fafafa] transition-[width] duration-200 ${
+      className={`flex shrink-0 flex-col border-r border-border bg-[#000000] transition-[width] duration-200 ${
         collapsed ? "w-16" : "w-56"
       }`}
     >
-      <div className="flex items-center border-b border-border px-3 py-5">
+      <div className="flex items-center border-b border-[#555555] px-3 py-5">
         {collapsed ? (
           <span
             className="flex size-9 w-full items-center justify-center text-xs font-semibold text-brand"
-            title={major}
+            title={title}
           >
             CS
           </span>
         ) : (
           <div className="flex h-9 w-full items-center gap-2 text-sm font-medium text-text-primary">
-            <Code className="size-4 shrink-0" aria-hidden />
-            <span className="min-w-0 flex-1 truncate">{major}</span>
+            <span className="min-w-0 text-white truncate font-bold">{"SJSU "}</span>
+            <span className="min-w-0 text-white truncate">{"Course Ratings"}</span>
             <ChevronDown className="size-4 shrink-0" aria-hidden />
           </div>
         )}
@@ -72,9 +72,9 @@ export function AppSidebar() {
               href={link.href}
               aria-current={current ? "page" : undefined}
               title={collapsed ? link.label : undefined}
-              className={`flex items-center rounded-full font-medium underline-offset-4 transition-colors hover:bg-surface-muted hover:text-brand ${
+              className={`flex items-center rounded-full font-medium text-white underline-offset-4 transition-colors hover:bg-white/10 hover:text-white ${
                 collapsed ? "size-9 justify-center" : "gap-2 px-3 py-2"
-              } ${current ? "text-brand" : "text-text-primary"}`}
+              }`}
             >
               <Icon className="size-4 shrink-0" aria-hidden />
               {collapsed ? (

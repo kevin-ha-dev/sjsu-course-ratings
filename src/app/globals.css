@@ -9,6 +9,8 @@
   --text-primary: #1c1c1d;
   --text-secondary: #28282a;
   --text-muted: color-mix(in srgb, #28282a 58%, #fafafa);
+  --text-white: #ffffff;
+  --text-light: #aaaaaa;
   --accent: #e5a823;
   --accent-hover: #d49a1c;
   --brand: #1c1c1d;
