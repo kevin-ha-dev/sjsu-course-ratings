@@ -12,6 +12,8 @@ export type ReviewValues = {
 export type CourseReview = ReviewValues & {
   id: string;
   authorId: string;
+  createdAt?: string;
+  editedAt?: string;
 };
 
 export type Course = {
@@ -35,6 +37,7 @@ export const courses: Course[] = [
       {
         id: "cs-160-1",
         authorId: "student-1",
+        createdAt: "2026-10-25T12:00:00.000Z",
         overallRating: 5,
         difficulty: 3,
         workload: 3,
@@ -48,6 +51,8 @@ export const courses: Course[] = [
       {
         id: "cs-160-2",
         authorId: DEMO_USER_ID,
+        createdAt: "2026-10-24T12:00:00.000Z",
+        editedAt: "2026-10-28T12:00:00.000Z",
         overallRating: 4,
         difficulty: 4,
         workload: 4,
@@ -61,6 +66,7 @@ export const courses: Course[] = [
       {
         id: "cs-160-3",
         authorId: "student-2",
+        createdAt: "2026-10-23T12:00:00.000Z",
         overallRating: 4,
         difficulty: 2,
         workload: 2,

@@ -23,9 +23,10 @@ export function CourseReviewPage({ course }: { course: Course }) {
   function saveReview(values: ReviewValues) {
     const existing = dialog?.review;
     if (existing) {
-      setReviews((current) => current.map((review) => review.id === existing.id ? { ...review, ...values } : review));
+      const editedAt = new Date().toISOString();
+      setReviews((current) => current.map((review) => review.id === existing.id ? { ...review, ...values, editedAt } : review));
     } else {
-      setReviews((current) => [{ ...values, id: crypto.randomUUID(), authorId: DEMO_USER_ID }, ...current]);
+      setReviews((current) => [{ ...values, id: crypto.randomUUID(), authorId: DEMO_USER_ID, createdAt: new Date().toISOString() }, ...current]);
     }
     setDialog(null);
     setNotice(existing ? "Review updated." : "Review added.");
