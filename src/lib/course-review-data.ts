@@ -16,6 +16,18 @@ export type CourseReview = ReviewValues & {
   editedAt?: string;
 };
 
+export type DashboardReview = {
+  id: string;
+  courseId: string;
+  code: string;
+  title: string;
+  professor: string;
+  overall: number;
+  difficulty: number;
+  workload: number;
+  comment: string;
+};
+
 export type Course = {
   id: string;
   code: string;
@@ -82,12 +94,8 @@ export const courses: Course[] = [
   ...[
     ["cs-146", "CS 146", "Data Structures and Algorithms"],
     ["cs-149", "CS 149", "Operating Systems"],
-    ["cmpe-131", "CMPE 131", "Software Engineering I"],
-    ["math-42", "MATH 42", "Discrete Mathematics"],
     ["cs-151", "CS 151", "Object-Oriented Design"],
-    ["cmpe-102", "CMPE 102", "Assembly Language Programming"],
     ["cs-46b", "CS 46B", "Introduction to Data Structures"],
-    ["engl-1b", "ENGL 1B", "Argument and Analysis"],
   ].map(([id, code, title]) => ({
     id,
     code,

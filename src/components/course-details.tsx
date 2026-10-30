@@ -63,7 +63,7 @@ export function CourseDetails({ reviews, professors }: { reviews: CourseReview[]
           ))}
           <div className="col-span-2 min-w-0">
             <dt className="text-xs text-[#555]">Professors</dt>
-            <dd className="mt-1 break-words">{professors.join(", ")}</dd>
+            <dd className="mt-1 break-words">{professors.length ? professors.join(", ") : "None listed"}</dd>
           </div>
         </dl>
       </div>

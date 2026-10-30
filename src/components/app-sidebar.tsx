@@ -2,18 +2,13 @@
 
 import {
   BookOpen,
-  Braces,
-  Briefcase,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
-  CircuitBoard,
   Code,
-  Cpu,
   LayoutDashboard,
   Pin,
   Users,
-  type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -21,13 +16,7 @@ import { useState } from "react";
 
 import { usePinnedCourses } from "@/components/pinned-courses";
 
-const majors: { label: string; icon: LucideIcon }[] = [
-  { label: "Computer Science", icon: Code },
-  { label: "Computer Engineering", icon: Cpu },
-  { label: "Software Engineering", icon: Braces },
-  { label: "Electrical Engineering", icon: CircuitBoard },
-  { label: "Business Administration", icon: Briefcase },
-];
+const title = "SJSU Course Ratings";
 
 const links = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -41,57 +30,30 @@ function isCurrent(pathname: string, href: string) {
 
 export function AppSidebar() {
   const pathname = usePathname();
-  const [major, setMajor] = useState(majors[0].label);
-  const MajorIcon = majors.find((option) => option.label === major)?.icon ?? Code;
   const [collapsed, setCollapsed] = useState(false);
   const [pinnedOpen, setPinnedOpen] = useState(true);
-  const { courses: pinnedCourses } = usePinnedCourses();
+  const { courses: pinnedCourses, ready: pinsReady } = usePinnedCourses();
 
   return (
     <aside
-      className={`flex shrink-0 flex-col border-r border-border bg-[#fafafa] transition-[width] duration-200 ${
+      className={`flex shrink-0 flex-col border-r border-border bg-[#000000] transition-[width] duration-200 ${
         collapsed ? "w-16" : "w-56"
       }`}
     >
-      <div className="flex items-center border-b border-border px-3 py-5">
+      <div className="flex items-center border-b border-[#555555] px-3 py-5">
         {collapsed ? (
           <span
             className="flex size-9 w-full items-center justify-center text-xs font-semibold text-brand"
-            title={major}
+            title={title}
           >
-            {major
-              .split(" ")
-              .map((word) => word[0])
-              .join("")}
+            CS
           </span>
         ) : (
-          <>
-            <label htmlFor="major" className="sr-only">
-              Major
-            </label>
-            <div className="relative w-full">
-              <MajorIcon
-                className="pointer-events-none absolute top-1/2 left-0 size-4 -translate-y-1/2 text-text-primary"
-                aria-hidden
-              />
-              <select
-                id="major"
-                value={major}
-                onChange={(event) => setMajor(event.target.value)}
-                className="h-9 w-full appearance-none bg-transparent py-2 pr-6 pl-6 text-sm font-medium text-text-primary outline-none"
-              >
-                {majors.map((option) => (
-                  <option key={option.label} value={option.label}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown
-                className="pointer-events-none absolute top-1/2 right-0 size-4 -translate-y-1/2 text-text-primary"
-                aria-hidden
-              />
-            </div>
-          </>
+          <div className="flex h-9 w-full items-center gap-2 text-sm font-medium text-text-primary">
+            <span className="min-w-0 text-white truncate font-bold">{"SJSU "}</span>
+            <span className="min-w-0 text-white truncate">{"Course Ratings"}</span>
+            <ChevronDown className="size-4 shrink-0" aria-hidden />
+          </div>
         )}
       </div>
       <nav
@@ -110,9 +72,9 @@ export function AppSidebar() {
               href={link.href}
               aria-current={current ? "page" : undefined}
               title={collapsed ? link.label : undefined}
-              className={`flex items-center rounded-full font-medium underline-offset-4 transition-colors hover:bg-surface-muted hover:text-brand ${
+              className={`flex items-center rounded-full font-medium text-white underline-offset-4 transition-colors hover:bg-white/10 hover:text-white ${
                 collapsed ? "size-9 justify-center" : "gap-2 px-3 py-2"
-              } ${current ? "text-brand" : "text-text-primary"}`}
+              }`}
             >
               <Icon className="size-4 shrink-0" aria-hidden />
               {collapsed ? (
@@ -140,7 +102,7 @@ export function AppSidebar() {
                 aria-hidden
               />
             </button>
-            {pinnedOpen && pinnedCourses.length === 0 ? (
+            {pinnedOpen && pinsReady && pinnedCourses.length === 0 ? (
               <p className="mt-1 flex items-center gap-2 px-3 py-2 text-sm text-text-muted">
                 <Pin className="size-4 shrink-0" aria-hidden />
                 Nothing pinned
