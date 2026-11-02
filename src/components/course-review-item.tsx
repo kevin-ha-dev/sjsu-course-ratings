@@ -6,7 +6,15 @@ import { useEffect, useId, useRef, useState } from "react";
 import { StarRating } from "@/components/star-rating";
 import type { CourseReview } from "@/lib/course-review-data";
 
-export function CourseReviewItem({ review, onEdit }: { review: CourseReview; onEdit?: () => void }) {
+export function CourseReviewItem({
+  review,
+  onEdit,
+  courseLabel,
+}: {
+  review: CourseReview;
+  onEdit?: () => void;
+  courseLabel?: string;
+}) {
   const textId = useId();
   const textRef = useRef<HTMLParagraphElement>(null);
   const [hasOverflow, setHasOverflow] = useState(false);
@@ -36,7 +44,12 @@ export function CourseReviewItem({ review, onEdit }: { review: CourseReview; onE
   }, [review.comment]);
 
   return (
-    <li className="border-b border-border py-6 even:-mx-3 even:rounded even:border-transparent even:bg-surface-muted even:px-3">
+    <li className="border-b border-border py-6 even:-mx-3 even:rounded even:border-transparent even:bg-surface-muted even:px-3"> 
+    {courseLabel && (
+      <p className="mb-3 text-sm font-semibold">
+        {courseLabel}
+      </p>
+    )}
       <div className="flex min-h-8 flex-wrap items-center justify-between gap-x-4 gap-y-2">
         <div className="flex shrink-0 items-center gap-3 text-sm">
           <span className="font-semibold">{review.overallRating.toFixed(1)}</span>
