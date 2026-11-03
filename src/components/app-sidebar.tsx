@@ -5,7 +5,6 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
-  Code,
   LayoutDashboard,
   Pin,
   Users,
@@ -21,6 +20,7 @@ const title = "SJSU Course Ratings";
 const links = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/courses", label: "Course offerings", icon: BookOpen },
+  { href: "/professors", label: "Professors", icon: Users },
   { href: "/community", label: "Community", icon: Users },
 ];
 

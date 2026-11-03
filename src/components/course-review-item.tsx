@@ -6,21 +6,15 @@ import { useEffect, useId, useRef, useState } from "react";
 import { StarRating } from "@/components/star-rating";
 import type { CourseReview } from "@/lib/course-review-data";
 
-const ratingTags = {
-  difficulty: ["Very Easy", "Somewhat Easy", "Average Difficulty", "Somewhat Hard", "Very Hard"],
-  workload: ["Light Workload", "Somewhat Light Workload", "Average Workload", "Somewhat Heavy Workload", "Heavy Workload"],
-  careerRelevance: ["Not Career Relevant", "Slightly Career Relevant", "Somewhat Career Relevant", "Highly Career Relevant", "Helped Me Land a Job"],
-  gradeLeniency: ["Harsh Grader", "Slightly Harsh Grader", "Average Grader", "Slightly Easy Grader", "Easy A"],
-};
-const reviewDateFormat = new Intl.DateTimeFormat("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "America/Los_Angeles" });
-
-function formatReviewDate(value?: string) {
-  if (!value) return null;
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? null : reviewDateFormat.format(date);
-}
-
-export function CourseReviewItem({ review, onEdit }: { review: CourseReview; onEdit?: () => void }) {
+export function CourseReviewItem({
+  review,
+  onEdit,
+  courseLabel,
+}: {
+  review: CourseReview;
+  onEdit?: () => void;
+  courseLabel?: string;
+}) {
   const textId = useId();
   const textRef = useRef<HTMLParagraphElement>(null);
   const [hasOverflow, setHasOverflow] = useState(false);
@@ -50,10 +44,19 @@ export function CourseReviewItem({ review, onEdit }: { review: CourseReview; onE
   }, [review.comment]);
 
   return (
-    <li className="border-b border-border py-6 sm:pb-4 even:-mx-3 even:rounded even:border-transparent even:bg-surface-muted even:px-3">
-      <div className="flex min-h-8 flex-col gap-2">
-        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4">
-          <span className="inline-flex min-w-0 items-center gap-1.5 text-sm font-semibold">
+    <li className="border-b border-border py-6 even:-mx-3 even:rounded even:border-transparent even:bg-surface-muted even:px-3"> 
+    {courseLabel && (
+      <p className="mb-3 text-sm font-semibold">
+        {courseLabel}
+      </p>
+    )}
+      <div className="flex min-h-8 flex-wrap items-center justify-between gap-x-4 gap-y-2">
+        <div className="flex shrink-0 items-center gap-3 text-sm">
+          <span className="font-semibold">{review.overallRating.toFixed(1)}</span>
+          <StarRating value={review.overallRating} />
+        </div>
+        <div className="ml-auto flex min-w-0 max-w-full flex-wrap items-center justify-end gap-x-3 gap-y-1 text-right text-xs">
+          <span className="inline-flex min-w-0 items-center gap-1.5 text-text-muted">
             <UserRound className="size-4 shrink-0" aria-hidden />
             <span className="min-w-0 break-words">{review.professor}</span>
           </span>
