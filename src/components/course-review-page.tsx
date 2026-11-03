@@ -56,7 +56,8 @@ export function CourseReviewPage({ course }: { course: Course }) {
     const existing = dialog?.review;
     const savedReview = existing !== null && existing !== undefined && /^[1-9]\d*$/.test(existing.id);
     if (existing && !savedReview) {
-      setReviews((current) => current.map((review) => review.id === existing.id ? { ...review, ...values } : review));
+      const editedAt = new Date().toISOString();
+      setReviews((current) => current.map((review) => review.id === existing.id ? { ...review, ...values, editedAt } : review));
       setDialog(null);
       setNotice("Review updated.");
       return;
