@@ -39,22 +39,61 @@ export function AuthForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null); 
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
+    setSuccess(null);
     setLoading(true);
 
-    if (mode === "signup" && password !== confirmPassword) {
-      setError("Passwords do not match.");
-      setLoading(false);
-      return;
+    try {
+      if (mode === "signup" && password !== confirmPassword) {
+        setError("Passwords do not match.");
+        return;
     }
 
+    const supabase = createClient();
+
+    if (mode === "signup") {
+      const { data, error } = await supabase.auth.signUp({
+        email: email.trim(),
+        password,
+      });
+
+      if (error) {
+        setError(error.message);
+        return;
+      }
+
+      if (data.session) {
+        window.location.assign("/dashboard");
+      } else {
+        setSuccess("Check your email to confirm your account before signing in.");
+      }
+    } else {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
+
+      if (error) {
+        setError(error.message);
+        return;
+      }
+
+      window.location.assign("/dashboard");
+    }
+  } catch (error) {
+    setError(
+      error instanceof Error ? error.message : "Unable to sign in. Please try again."
+    );
+  } finally {
     setLoading(false);
   }
+}
 
   async function handleGoogleSignIn() {
     setError(null);
@@ -77,6 +116,7 @@ export function AuthForm() {
   function toggleMode() {
     setMode((current) => (current === "login" ? "signup" : "login"));
     setError(null);
+    setSuccess(null);
     setShowPassword(false);
     setShowConfirmPassword(false);
     setConfirmPassword("");
@@ -181,6 +221,11 @@ export function AuthForm() {
                 </button>
               </div>
             </div>
+          )}
+          {success && (
+            <p role="status" className="text-sm text-green-700">
+              {success}
+            </p>
           )}
 
           {error && (

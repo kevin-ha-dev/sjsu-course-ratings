@@ -61,7 +61,6 @@ export function PinnedCoursesProvider({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false);
   const coursesRef = useRef(courses);
   const writes = useRef(Promise.resolve());
-  coursesRef.current = courses;
 
   useEffect(() => {
     let cancelled = false;
