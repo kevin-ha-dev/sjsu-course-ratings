@@ -16,7 +16,6 @@ function courseFromCatalog(courseId: string): Course | null {
     code: listed.code,
     title: listed.title,
     professors: [],
-    reviews: [],
   };
 }
 

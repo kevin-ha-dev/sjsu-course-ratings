@@ -9,6 +9,7 @@ import Link from "next/link";
 
 import { usePinnedCourses, type PinnedCourse } from "@/components/pinned-courses";
 import type { DashboardReview } from "@/lib/course-review-data";
+import { formatReviewTimestamp } from "@/lib/review-time";
 import { createClient } from "@/lib/supabase/client";
 
 const reviewColumns =
@@ -181,7 +182,15 @@ export default function DashboardPage() {
                   className={`${reviewColumns} grid grid-cols-1 gap-y-1 px-6 py-4 hover:bg-surface sm:px-0 sm:py-0`}
                 >
                   <span className="text-sm font-medium tracking-[0.04em] text-text-primary sm:px-4 sm:py-4">
-                    {review.code}
+                    <span className="block">{review.code}</span>
+                    <time dateTime={review.createdAt} className="mt-1 block text-xs font-normal tracking-normal text-text-muted">
+                      Posted {formatReviewTimestamp(review.createdAt)}
+                    </time>
+                    {review.editedAt && (
+                      <time dateTime={review.editedAt} className="mt-1 block text-xs font-normal tracking-normal text-text-muted">
+                        Edited {formatReviewTimestamp(review.editedAt)}
+                      </time>
+                    )}
                   </span>
                   <span className="text-sm text-text-primary sm:px-4 sm:py-4">
                     {review.professor}

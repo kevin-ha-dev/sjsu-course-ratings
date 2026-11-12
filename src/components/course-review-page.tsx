@@ -2,28 +2,33 @@
 
 import { ArrowRight, ChevronRight } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { CourseDetails } from "@/components/course-details";
 import { CourseReviewDialog } from "@/components/course-review-dialog";
 import { CourseReviewItem } from "@/components/course-review-item";
 import { CourseReviewSummary } from "@/components/course-review-summary";
 import { StarRating } from "@/components/star-rating";
-import { DEMO_USER_ID, type Course, type CourseReview, type ReviewValues } from "@/lib/course-review-data";
+import type { Course, CourseReview, ReviewValues } from "@/lib/course-review-data";
 import { createClient } from "@/lib/supabase/client";
 
 export function CourseReviewPage({ course }: { course: Course }) {
-  const [reviews, setReviews] = useState(course.reviews);
+  const [reviews, setReviews] = useState<CourseReview[]>([]);
   const [dialog, setDialog] = useState<{ review: CourseReview | null } | null>(null);
   const [notice, setNotice] = useState("");
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [loadingReviews, setLoadingReviews] = useState(true);
+  const [reviewsError, setReviewsError] = useState("");
+  const [reloadKey, setReloadKey] = useState(0);
+  const mutationVersion = useRef(0);
   const count = reviews.length;
   const average = count ? (reviews.reduce((sum, review) => sum + review.overallRating, 0) / count).toFixed(1) : null;
   const difficulty = count ? Math.round(reviews.reduce((sum, review) => sum + review.difficulty, 0) / count / 5 * 100) : null;
 
   useEffect(() => {
     let cancelled = false;
-    const fixtureIds = new Set(course.reviews.map((review) => review.id));
+    const controller = new AbortController();
+    const version = mutationVersion.current;
 
     createClient().auth.getSession().then(({ data }) => {
       if (!cancelled) setCurrentUserId(data.session?.user.id ?? null);
@@ -31,37 +36,37 @@ export function CourseReviewPage({ course }: { course: Course }) {
       if (!cancelled) setCurrentUserId(null);
     });
 
-    fetch(`/api/reviews?course=${encodeURIComponent(course.code)}`)
+    fetch(`/api/reviews?course=${encodeURIComponent(course.code)}`, { signal: controller.signal })
       .then(async (response) => {
-        if (!response.ok) return null;
+        if (!response.ok) throw new Error("Could not load reviews.");
         return response.json() as Promise<{ reviews?: CourseReview[] }>;
       })
       .then((body) => {
-        if (cancelled || !body || !Array.isArray(body.reviews)) return;
-        const saved = body.reviews;
-        const savedIds = new Set(saved.map((review) => review.id));
-        setReviews((current) => {
-          const pending = current.filter((review) => !savedIds.has(review.id) && !fixtureIds.has(review.id));
-          return [...saved, ...pending, ...course.reviews];
-        });
+        if (!Array.isArray(body.reviews)) throw new Error("Could not load reviews.");
+        if (!cancelled && mutationVersion.current === version) setReviews(body.reviews);
       })
-      .catch(() => {});
+      .catch(() => {
+        if (!cancelled) setReviewsError("Could not load reviews.");
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingReviews(false);
+      });
 
     return () => {
       cancelled = true;
+      controller.abort();
     };
-  }, [course.code, course.reviews]);
+  }, [course.code, reloadKey]);
+
+  function retryReviews() {
+    setLoadingReviews(true);
+    setReviewsError("");
+    setReloadKey((key) => key + 1);
+  }
 
   async function saveReview(values: ReviewValues) {
     const existing = dialog?.review;
-    const savedReview = existing !== null && existing !== undefined && /^[1-9]\d*$/.test(existing.id);
-    if (existing && !savedReview) {
-      const editedAt = new Date().toISOString();
-      setReviews((current) => current.map((review) => review.id === existing.id ? { ...review, ...values, editedAt } : review));
-      setDialog(null);
-      setNotice("Review updated.");
-      return;
-    }
+    const savedReview = existing !== null && existing !== undefined;
 
     const { data } = await createClient().auth.getSession();
     const token = data.session?.access_token;
@@ -86,9 +91,11 @@ export function CourseReviewPage({ course }: { course: Course }) {
     }
 
     const review = body.review;
+    mutationVersion.current += 1;
     setReviews((current) => savedReview && existing
       ? current.map((item) => item.id === existing.id ? review : item)
       : [review, ...current]);
+    retryReviews();
     setDialog(null);
     setNotice(savedReview ? "Review updated." : "Review added.");
   }
@@ -141,10 +148,23 @@ export function CourseReviewPage({ course }: { course: Course }) {
               </p>
             ) : null}
           </div>
-          {reviews.length ? (
+          {reviewsError && reviews.length > 0 && (
+            <div className="mb-3 flex flex-wrap items-center gap-3 text-sm">
+              <p role="alert" className="text-error">{reviewsError}</p>
+              <button type="button" onClick={retryReviews} className="underline underline-offset-4">Try again</button>
+            </div>
+          )}
+          {loadingReviews && !reviews.length ? (
+            <p className="border-b border-border py-10 text-sm text-text-muted">Loading reviews...</p>
+          ) : reviewsError && !reviews.length ? (
+            <div className="border-b border-border py-10 text-sm">
+              <p role="alert" className="text-error">{reviewsError}</p>
+              <button type="button" onClick={retryReviews} className="mt-2 underline underline-offset-4">Try again</button>
+            </div>
+          ) : reviews.length ? (
             <ul aria-label="Course reviews">
               {reviews.map((review) => (
-                <CourseReviewItem key={review.id} review={review} onEdit={review.authorId === currentUserId || review.authorId === DEMO_USER_ID ? () => setDialog({ review }) : undefined} />
+                <CourseReviewItem key={review.id} review={review} onEdit={review.authorId === currentUserId ? () => setDialog({ review }) : undefined} />
               ))}
             </ul>
           ) : (

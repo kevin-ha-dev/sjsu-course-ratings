@@ -26,13 +26,13 @@ export function CourseDetails({ reviews, professors }: { reviews: CourseReview[]
       </summary>
       <div className="grid gap-6 pt-3 pb-6 sm:grid-cols-2 sm:gap-10">
         <div>
-          <div className="mb-3 flex items-center gap-1.5">
+          <div className="relative mb-3 flex items-center gap-1.5">
             <h2 className="text-sm font-semibold">Rating breakdown</h2>
-            <div className="group/ratings relative">
+            <div className="group/ratings">
               <button type="button" aria-label="How ratings are grouped" aria-describedby="rating-breakdown-explanation" className="flex size-6 items-center justify-center rounded text-text-muted hover:text-text-primary focus-visible:outline-2 focus-visible:outline-offset-2">
                 <Info className="size-3.5" aria-hidden />
               </button>
-              <span id="rating-breakdown-explanation" role="tooltip" className="invisible absolute bottom-full left-1/2 z-10 mb-2 w-56 -translate-x-1/2 rounded-md border border-border bg-white p-3 text-xs leading-5 text-text-primary opacity-0 shadow-sm group-hover/ratings:visible group-hover/ratings:opacity-100 group-focus-within/ratings:visible group-focus-within/ratings:opacity-100">
+              <span id="rating-breakdown-explanation" role="tooltip" className="invisible absolute bottom-full left-0 z-10 mb-2 w-56 max-w-full rounded-md border border-border bg-white p-3 text-xs leading-5 text-text-primary opacity-0 shadow-sm group-hover/ratings:visible group-hover/ratings:opacity-100 group-focus-within/ratings:visible group-focus-within/ratings:opacity-100">
                 Half-star ratings round up for this chart only. For example, 4.5 counts as 5 stars.
               </span>
             </div>

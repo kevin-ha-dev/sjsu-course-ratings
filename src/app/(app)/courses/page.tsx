@@ -1,3 +1,5 @@
+import { connection } from "next/server";
+
 import { CourseOfferings, type Offering } from "@/components/course-offerings";
 import { lowerDivision, upperDivision } from "@/lib/course-catalog";
 import { createClient } from "@/lib/supabase/server";
@@ -23,6 +25,7 @@ const catalogTitles = new Map(
 const hiddenCourses = new Set(["ART 108", "CS 190", "CS 190I"]);
 
 export default async function CourseOfferingsPage() {
+  await connection();
   const supabase = createClient();
   const { data, error } = await supabase
     .from("courses")

@@ -17,6 +17,16 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) to view the app.
 
+## Reviews
+
+Set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` in
+`.env.local`. Apply the review timestamp SQL migration in the Supabase SQL Editor
+before running the updated review pages. The migration is kept outside this
+repository. It adds the
+server-managed edit timestamp and enforces review ownership for updates.
+Review timestamps are stored as UTC instants and shown in Cupertino local time
+(`America/Los_Angeles`, including daylight saving changes).
+
 ## AI Review Summaries
 
 Add a [Google AI Studio API key](https://aistudio.google.com/apikey) to `.env.local`:
@@ -41,9 +51,8 @@ The demo caches successful summaries for one hour (up to 100 entries), combines
 simultaneous identical requests, and allows five new generations per minute per
 server process. Editing reviews clears the displayed summary. The cache and limit
 reset on server restart and are not shared across deployments or server instances.
-Before a public deployment, load reviews from the database and use authentication
-and shared storage for caching and rate limits. Reviews currently live in browser
-state and reset on reload.
+Before a public deployment, use shared storage for summary caching and rate limits.
+The review pages load saved reviews from Supabase.
 
 ## Scripts
 
@@ -53,4 +62,4 @@ state and reset on reload.
 | `npm run build` | Create a production build |
 | `npm run start` | Serve the production build |
 | `npm run lint` | Run ESLint |
-| `npm test` | Test the summary endpoint with simulated Gemini responses (Node 22.6+) |
+| `npm test` | Test the review endpoints and summaries (Node 22.20+) |

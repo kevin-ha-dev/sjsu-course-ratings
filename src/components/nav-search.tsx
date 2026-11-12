@@ -71,7 +71,7 @@ export function NavSearch() {
               <li className="px-4 py-3 text-sm text-text-muted">No matching courses</li>
             ) : (
               results.map((course) => (
-                <li key={course.code} role="option">
+                <li key={course.code} role="option" aria-selected={false}>
                   <Link
                     href={`/courses/${courseId(course.code)}`}
                     onClick={() => {

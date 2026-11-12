@@ -79,6 +79,7 @@ export function CourseReviewDialog({
 }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
+  const focusErrors = useRef(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -101,7 +102,8 @@ export function CourseReviewDialog({
   }, []);
 
   useEffect(() => {
-    if (Object.keys(errors).length) {
+    if (focusErrors.current) {
+      focusErrors.current = false;
       formRef.current?.querySelector<HTMLElement>('[data-invalid="true"], [aria-invalid="true"]')?.focus();
     }
   }, [errors]);
@@ -125,6 +127,7 @@ export function CourseReviewDialog({
     if (comment.length > 4000) nextErrors.comment = "Keep your review to 4,000 characters or fewer.";
     if (attendance !== null && attendance !== "yes" && attendance !== "no") nextErrors.attendanceMandatory = "Choose Yes or No.";
     if (!professorOptions.includes(professor)) nextErrors.professor = "Choose a professor.";
+    focusErrors.current = Object.keys(nextErrors).length > 0;
     setErrors(nextErrors);
     setFormError("");
     if (Object.keys(nextErrors).length) return;
@@ -164,7 +167,24 @@ export function CourseReviewDialog({
         </button>
       </div>
       <p className="mt-1 mb-6 text-xs leading-5 text-text-muted">{courseLabel}</p>
-      <form ref={formRef} noValidate onSubmit={submitReview} className="grid w-full grid-cols-1 gap-x-5 gap-y-5 sm:grid-cols-2">
+      <form
+        ref={formRef}
+        noValidate
+        onSubmit={submitReview}
+        onChange={(event) => {
+          const target = event.target;
+          if (!(target instanceof HTMLInputElement || target instanceof HTMLSelectElement || target instanceof HTMLTextAreaElement)) return;
+          const field = target.name;
+          setErrors((current) => {
+            if (!current[field]) return current;
+            const next = { ...current };
+            delete next[field];
+            return next;
+          });
+          setFormError("");
+        }}
+        className="grid w-full grid-cols-1 gap-x-5 gap-y-5 sm:grid-cols-2"
+      >
         {(Object.keys(errors).length > 0 || formError) && <p role="alert" className="text-sm text-error sm:col-span-2">{formError || "Please complete the highlighted fields."}</p>}
         {ratingFields.slice(0, 3).map((field) => <RatingField key={field.name} field={field} value={review?.[field.name]} error={errors[field.name]} />)}
         <div className="min-w-0 sm:col-span-2">

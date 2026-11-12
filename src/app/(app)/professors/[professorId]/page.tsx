@@ -21,6 +21,7 @@ type ReviewRow = {
   attendance_mandatory: boolean | null;
   comment: string | null;
   created_at: string;
+  updated_at: string | null;
 };
 
 type OfferingRow = {
@@ -83,7 +84,8 @@ export default async function ProfessorProfilePage({
         grade_leniency,
         attendance_mandatory,
         comment,
-        created_at
+        created_at,
+        updated_at
       )
     `)
     .eq("professor_id", professorId);
@@ -121,6 +123,7 @@ export default async function ProfessorProfilePage({
         courseCode: info?.code ?? "Course unavailable",
         courseHref: info?.href ?? null,
         createdAt: row.created_at,
+        editedAt: row.updated_at,
       });
     }
   }

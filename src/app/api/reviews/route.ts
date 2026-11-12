@@ -7,6 +7,8 @@ const MAX_BODY_CHARS = 16_384;
 const reviewSelect = `
   id,
   user_id,
+  created_at,
+  updated_at,
   overall_rating,
   difficulty_rating,
   workload_rating,
@@ -31,6 +33,8 @@ type OfferingRecord = {
 type ReviewRecord = {
   id: number;
   user_id: string;
+  created_at: string;
+  updated_at: string | null;
   overall_rating: number | string;
   difficulty_rating: number;
   workload_rating: number;
@@ -124,6 +128,8 @@ function courseOf(row: ReviewRecord) {
 function toDashboardReview(row: ReviewRecord): DashboardReview {
   return {
     id: String(row.id),
+    createdAt: row.created_at,
+    editedAt: row.updated_at,
     ...courseOf(row),
     professor: professorName(row),
     overall: Number(row.overall_rating),
@@ -137,6 +143,8 @@ function toReview(row: ReviewRecord): CourseReview {
   return {
     id: String(row.id),
     authorId: row.user_id,
+    createdAt: row.created_at,
+    editedAt: row.updated_at,
     overallRating: Number(row.overall_rating),
     difficulty: row.difficulty_rating,
     workload: row.workload_rating,
@@ -212,6 +220,8 @@ function reviewColumns(values: ReturnType<typeof parseReview>, courseOfferingId:
 const userReviewSelect = `
   id,
   user_id,
+  created_at,
+  updated_at,
   overall_rating,
   difficulty_rating,
   workload_rating,
@@ -305,12 +315,13 @@ export async function PATCH(request: Request) {
     const id = record(body) ? body.id : null;
     if (typeof id !== "number" || !Number.isInteger(id) || id < 1) throw new ReviewError("Choose a review to update.", 400);
 
-    const { supabase } = await signedInClient(request);
+    const { supabase, userId } = await signedInClient(request);
     const courseOfferingId = await offeringId(supabase, values.course, values.professor);
     const { data, error } = await supabase
       .from("reviews")
       .update(reviewColumns(values, courseOfferingId))
       .eq("id", id)
+      .eq("user_id", userId)
       .select(reviewSelect)
       .maybeSingle();
 
