@@ -8,6 +8,7 @@ import {
   LayoutDashboard,
   Pin,
   Users,
+  X,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -45,7 +46,7 @@ export function AppSidebar() {
   const [mobileExpanded, setMobileExpanded] = useState(false);
   const collapsed = compactViewport ? !mobileExpanded : desktopCollapsed;
   const [pinnedOpen, setPinnedOpen] = useState(true);
-  const { courses: pinnedCourses, ready: pinsReady } = usePinnedCourses();
+  const { courses: pinnedCourses, ready: pinsReady, toggle } = usePinnedCourses();
 
   return (
     <>
@@ -136,15 +137,23 @@ export function AppSidebar() {
                 className="mt-1 flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto"
               >
                 {pinnedCourses.map((course) => (
-                  <li key={course.id}>
+                  <li key={course.id} className="flex items-center rounded-full pr-1 hover:bg-white/10">
                     <Link
                       href={`/courses/${course.id}`}
                       onClick={() => setMobileExpanded(false)}
-                      className="flex items-center gap-2 rounded-full px-3 py-2 text-white hover:bg-white/10"
+                      className="flex min-w-0 flex-1 items-center gap-2 px-3 py-2 text-white"
                     >
                       <Pin className="size-4 shrink-0 fill-current" aria-hidden />
                       <span className="truncate">{course.code}</span>
                     </Link>
+                    <button
+                      type="button"
+                      aria-label={`Unpin ${course.code}`}
+                      onClick={() => toggle(course)}
+                      className="flex size-7 shrink-0 items-center justify-center rounded-full text-white/60 hover:bg-white/15 hover:text-white"
+                    >
+                      <X className="size-3.5" aria-hidden />
+                    </button>
                   </li>
                 ))}
               </ul>
