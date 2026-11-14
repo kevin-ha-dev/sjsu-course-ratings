@@ -69,12 +69,14 @@ export function CourseReviewDialog({
   courseLabel,
   professors,
   onSave,
+  onDelete,
   onDismiss,
 }: {
   review: CourseReview | null;
   courseLabel: string;
   professors: string[];
   onSave: (values: ReviewValues) => Promise<void>;
+  onDelete?: () => Promise<void>;
   onDismiss: () => void;
 }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -83,7 +85,9 @@ export function CourseReviewDialog({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [attendanceSelection, setAttendanceSelection] = useState<boolean | null>(review?.attendanceMandatory ?? null);
+  const busy = submitting || deleting;
   const professorOptions = review?.professor && !professors.includes(review.professor)
     ? [review.professor, ...professors]
     : professors;
@@ -148,6 +152,18 @@ export function CourseReviewDialog({
       setFormError(error instanceof Error ? error.message : "Could not save your review.");
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function deleteReview() {
+    if (!onDelete || !review) return;
+    setDeleting(true);
+    setFormError("");
+    try {
+      await onDelete();
+    } catch (error) {
+      setFormError(error instanceof Error ? error.message : "Could not delete your review.");
+      setDeleting(false);
     }
   }
 
@@ -218,8 +234,19 @@ export function CourseReviewDialog({
           {errors.comment && <p id="comment-error" className="mt-1 text-xs text-error">{errors.comment}</p>}
         </div>
         <div className="flex flex-wrap items-center justify-end gap-3 border-t border-border pt-4 sm:col-span-2">
-          <button type="button" onClick={onDismiss} disabled={submitting} className="px-3 py-2.5 text-sm text-text-muted underline-offset-4 hover:underline focus-visible:outline-2 disabled:opacity-60">Cancel</button>
-          <button type="submit" disabled={submitting} aria-busy={submitting} className="inline-flex items-center gap-2 rounded-md bg-brand px-4 py-2.5 text-sm font-medium text-white hover:bg-neutral-700 focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-black disabled:opacity-70">
+          <button type="button" onClick={onDismiss} disabled={busy} className="px-3 py-2.5 text-sm text-text-muted underline-offset-4 hover:underline focus-visible:outline-2 disabled:opacity-60">Cancel</button>
+          {review && onDelete ? (
+            <button
+              type="button"
+              onClick={() => void deleteReview()}
+              disabled={busy}
+              aria-busy={deleting}
+              className="rounded-md bg-[#8B0000] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#750000] focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-black disabled:opacity-70"
+            >
+              {deleting ? "Deleting..." : "Delete Review"}
+            </button>
+          ) : null}
+          <button type="submit" disabled={busy} aria-busy={submitting} className="inline-flex items-center gap-2 rounded-md bg-brand px-4 py-2.5 text-sm font-medium text-white hover:bg-neutral-700 focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-black disabled:opacity-70">
             {submitting ? "Submitting..." : review ? "Save Changes" : "Submit Review"}
             <ArrowRight className="size-4" aria-hidden />
           </button>

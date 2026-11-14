@@ -100,6 +100,34 @@ export function CourseReviewPage({ course }: { course: Course }) {
     setNotice(savedReview ? "Review updated." : "Review added.");
   }
 
+  async function deleteReview() {
+    const existing = dialog?.review;
+    if (!existing) return;
+
+    const { data } = await createClient().auth.getSession();
+    const token = data.session?.access_token;
+    if (!token) throw new Error("Sign in to delete a review.");
+
+    const response = await fetch("/api/reviews", {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ id: Number(existing.id) }),
+    });
+    const body = await response.json().catch(() => null) as { error?: string } | null;
+    if (!response.ok) {
+      throw new Error(body?.error ?? "Could not delete your review.");
+    }
+
+    mutationVersion.current += 1;
+    setReviews((current) => current.filter((item) => item.id !== existing.id));
+    retryReviews();
+    setDialog(null);
+    setNotice("Review deleted.");
+  }
+
   return (
     <div className="flex min-h-0 flex-1 flex-col bg-white font-[Arial,Helvetica,sans-serif] text-text-primary [--border:#e2e4e6] [--brand:#202124] [--surface-muted:#f5f6f7] [--text-muted:#62676c]">
       <main className="w-full min-w-0 px-6 pt-6 pb-12 sm:px-10 sm:pt-8 lg:px-12">
@@ -178,6 +206,7 @@ export function CourseReviewPage({ course }: { course: Course }) {
           courseLabel={`${course.code} / ${course.title}`}
           professors={course.professors}
           onSave={saveReview}
+          onDelete={dialog.review ? deleteReview : undefined}
           onDismiss={() => setDialog(null)}
         />
       ) : null}

@@ -27,6 +27,7 @@ const modules = {
             order(...values) { call.methods.push(["order", ...values]); return this; },
             limit(...values) { call.methods.push(["limit", ...values]); return this; },
             update(value) { call.methods.push(["update", value]); return this; },
+            delete() { call.methods.push(["delete"]); return this; },
             single() { call.methods.push(["single"]); return Promise.resolve(globalThis.reviewApi.responses.shift()); },
             maybeSingle() { call.methods.push(["maybeSingle"]); return Promise.resolve(globalThis.reviewApi.responses.shift()); },
             then(resolve, reject) { return Promise.resolve(globalThis.reviewApi.responses.shift()).then(resolve, reject); },
@@ -47,7 +48,7 @@ registerHooks({
   },
 });
 
-const { GET, POST, PATCH } = await import("../src/app/api/reviews/route.ts");
+const { GET, POST, PATCH, DELETE } = await import("../src/app/api/reviews/route.ts");
 
 const row = {
   id: 7,
@@ -142,6 +143,29 @@ test("editing requires authentication", async () => {
     method: "PATCH",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ ...values, id: 7 }),
+  }));
+  assert.equal(response.status, 401);
+  assert.equal(mock.calls.length, 0);
+});
+
+test("deleting filters by owner and removes the review", async () => {
+  const mock = setup({ data: { id: 7 }, error: null });
+  const response = await DELETE(request("DELETE", { id: 7 }));
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), { ok: true });
+  assert.deepEqual(mock.calls[0].methods.filter(([name]) => name === "eq"), [
+    ["eq", "id", 7],
+    ["eq", "user_id", "user-1"],
+  ]);
+  assert.equal(mock.calls[0].methods[0][0], "delete");
+});
+
+test("deleting requires authentication", async () => {
+  const mock = setup();
+  const response = await DELETE(new Request("http://localhost/api/reviews", {
+    method: "DELETE",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ id: 7 }),
   }));
   assert.equal(response.status, 401);
   assert.equal(mock.calls.length, 0);

@@ -27,6 +27,9 @@ export type DashboardReview = {
   overall: number;
   difficulty: number;
   workload: number;
+  careerRelevance: number | null;
+  gradeLeniency: number | null;
+  attendanceMandatory: boolean | null;
   comment: string;
 };
 

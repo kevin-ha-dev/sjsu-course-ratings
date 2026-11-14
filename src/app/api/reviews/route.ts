@@ -135,6 +135,9 @@ function toDashboardReview(row: ReviewRecord): DashboardReview {
     overall: Number(row.overall_rating),
     difficulty: row.difficulty_rating,
     workload: row.workload_rating,
+    careerRelevance: row.career_relevance,
+    gradeLeniency: row.grade_leniency,
+    attendanceMandatory: row.attendance_mandatory,
     comment: row.comment ?? "",
   };
 }
@@ -225,6 +228,9 @@ const userReviewSelect = `
   overall_rating,
   difficulty_rating,
   workload_rating,
+  career_relevance,
+  grade_leniency,
+  attendance_mandatory,
   comment,
   course_offerings!inner (
     professors!inner ( name ),
@@ -308,12 +314,24 @@ export async function POST(request: Request) {
   }
 }
 
+function reviewIdFrom(request: Request, body: unknown) {
+  const query = new URL(request.url).searchParams.get("id");
+  if (query) {
+    const id = Number(query);
+    if (Number.isInteger(id) && id >= 1) return id;
+  }
+  if (record(body) && typeof body.id === "number" && Number.isInteger(body.id) && body.id >= 1) {
+    return body.id;
+  }
+  return null;
+}
+
 export async function PATCH(request: Request) {
   try {
     const body = await readBody(request);
     const values = parseReview(body);
-    const id = record(body) ? body.id : null;
-    if (typeof id !== "number" || !Number.isInteger(id) || id < 1) throw new ReviewError("Choose a review to update.", 400);
+    const id = reviewIdFrom(request, body);
+    if (id === null) throw new ReviewError("Choose a review to update.", 400);
 
     const { supabase, userId } = await signedInClient(request);
     const courseOfferingId = await offeringId(supabase, values.course, values.professor);
@@ -330,6 +348,31 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ review: toReview(data as ReviewRecord) });
   } catch (error) {
     const message = error instanceof ReviewError ? error.message : "Could not save your review.";
+    const status = error instanceof ReviewError ? error.status : 500;
+    return NextResponse.json({ error: message }, { status });
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    const body = await readBody(request);
+    const id = reviewIdFrom(request, body);
+    if (id === null) throw new ReviewError("Choose a review to delete.", 400);
+
+    const { supabase, userId } = await signedInClient(request);
+    const { data, error } = await supabase
+      .from("reviews")
+      .delete()
+      .eq("id", id)
+      .eq("user_id", userId)
+      .select("id")
+      .maybeSingle();
+
+    if (error) throw new ReviewError("Could not delete your review.", 500);
+    if (!data) throw new ReviewError("Review not found.", 404);
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    const message = error instanceof ReviewError ? error.message : "Could not delete your review.";
     const status = error instanceof ReviewError ? error.status : 500;
     return NextResponse.json({ error: message }, { status });
   }

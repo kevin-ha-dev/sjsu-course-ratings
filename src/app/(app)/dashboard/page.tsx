@@ -1,55 +1,88 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
-
-import { Pin } from "lucide-react";
+import { Pencil } from "lucide-react";
 import Link from "next/link";
 
-import { usePinnedCourses, type PinnedCourse } from "@/components/pinned-courses";
-import type { DashboardReview } from "@/lib/course-review-data";
+import { CourseReviewDialog } from "@/components/course-review-dialog";
+import type { CourseReview, DashboardReview, ReviewValues } from "@/lib/course-review-data";
 import { formatReviewTimestamp } from "@/lib/review-time";
 import { createClient } from "@/lib/supabase/client";
 
 const reviewColumns =
-  "sm:grid-cols-[8rem_11rem_5.5rem_7.5rem_7rem_minmax(0,1fr)] sm:items-baseline sm:gap-y-0";
-
-function ClassCell({
-  item,
-  className,
-}: {
-  item: PinnedCourse;
-  className: string;
-}) {
-  return (
-    <li className={className}>
-      <Link
-        href={`/courses/${item.id}`}
-        className="flex min-h-32 flex-col justify-between px-6 py-4 hover:bg-surface"
-      >
-        <span className="text-xs font-medium tracking-[0.14em] text-text-muted uppercase">
-          {item.code}
-        </span>
-        <span className="max-w-[16rem] text-sm font-medium text-text-primary">
-          {item.title}
-        </span>
-      </Link>
-    </li>
-  );
-}
+  "sm:grid-cols-[9rem_10rem_6.5rem_8rem_7.5rem_minmax(12rem,1fr)_auto] sm:items-center sm:gap-x-6";
 
 async function getDashboardUser() {
   const { data } = await createClient().auth.getSession();
   return data.session?.user ?? null;
 }
 
+function toCourseReview(review: DashboardReview, authorId: string): CourseReview {
+  return {
+    id: review.id,
+    authorId,
+    createdAt: review.createdAt,
+    editedAt: review.editedAt,
+    overallRating: review.overall,
+    difficulty: review.difficulty,
+    workload: review.workload,
+    careerRelevance: review.careerRelevance,
+    gradeLeniency: review.gradeLeniency,
+    attendanceMandatory: review.attendanceMandatory,
+    professor: review.professor,
+    comment: review.comment,
+  };
+}
+
+function applySaved(current: DashboardReview, saved: CourseReview): DashboardReview {
+  return {
+    ...current,
+    editedAt: saved.editedAt,
+    professor: saved.professor,
+    overall: saved.overallRating,
+    difficulty: saved.difficulty,
+    workload: saved.workload,
+    careerRelevance: saved.careerRelevance,
+    gradeLeniency: saved.gradeLeniency,
+    attendanceMandatory: saved.attendanceMandatory,
+    comment: saved.comment,
+  };
+}
+
+async function professorsForCourse(code: string) {
+  const match = code.trim().toUpperCase().match(/^([A-Z]+)\s+([A-Z0-9]+)$/);
+  if (!match) return [];
+
+  const { data, error } = await createClient()
+    .from("course_offerings")
+    .select("professors!inner(name), courses!inner(department, course_number)")
+    .ilike("courses.department", match[1])
+    .ilike("courses.course_number", match[2]);
+
+  if (error) return [];
+
+  const names = new Set<string>();
+  for (const row of data ?? []) {
+    const professor = Array.isArray(row.professors) ? row.professors[0] : row.professors;
+    if (typeof professor?.name === "string" && professor.name.trim()) {
+      names.add(professor.name.trim());
+    }
+  }
+
+  return [...names].sort((left, right) => left.localeCompare(right));
+}
+
 export default function DashboardPage() {
   const router = useRouter();
-  const { courses: pinnedCourses, ready: pinsReady } = usePinnedCourses();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [reviews, setReviews] = useState<DashboardReview[] | null>(null);
+  const [editing, setEditing] = useState<DashboardReview | null>(null);
+  const [professors, setProfessors] = useState<string[]>([]);
+  const [notice, setNotice] = useState("");
+  const editingId = useRef<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -111,6 +144,79 @@ export default function DashboardPage() {
     };
   }, [user]);
 
+  function openEdit(review: DashboardReview) {
+    editingId.current = review.id;
+    setNotice("");
+    setEditing(review);
+    setProfessors(review.professor ? [review.professor] : []);
+    void professorsForCourse(review.code).then((names) => {
+      if (editingId.current !== review.id || !names.length) return;
+      setProfessors(names);
+    });
+  }
+
+  function closeEdit() {
+    editingId.current = null;
+    setEditing(null);
+  }
+
+  async function saveReview(values: ReviewValues) {
+    if (!editing) return;
+
+    const { data } = await createClient().auth.getSession();
+    const token = data.session?.access_token;
+    if (!token) throw new Error("Sign in to submit a review.");
+
+    const response = await fetch("/api/reviews", {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        ...values,
+        courseCode: editing.code,
+        courseTitle: editing.title,
+        id: Number(editing.id),
+      }),
+    });
+    const body = await response.json().catch(() => null) as { error?: string; review?: CourseReview } | null;
+    if (!response.ok || !body?.review) {
+      throw new Error(body?.error ?? "Could not save your review.");
+    }
+
+    const saved = body.review;
+    setReviews((current) => current?.map((item) => item.id === editing.id ? applySaved(item, saved) : item) ?? current);
+    closeEdit();
+    setNotice("Review updated.");
+  }
+
+  async function deleteReview() {
+    if (!editing) return;
+
+    const { data } = await createClient().auth.getSession();
+    const token = data.session?.access_token;
+    if (!token) throw new Error("Sign in to delete a review.");
+
+    const response = await fetch("/api/reviews", {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ id: Number(editing.id) }),
+    });
+    const body = await response.json().catch(() => null) as { error?: string } | null;
+    if (!response.ok) {
+      throw new Error(body?.error ?? "Could not delete your review.");
+    }
+
+    const deletedId = editing.id;
+    setReviews((current) => current?.filter((item) => item.id !== deletedId) ?? current);
+    closeEdit();
+    setNotice("Review deleted.");
+  }
+
   if (loading || !user) {
     return (
       <main className="flex flex-1 items-center justify-center px-6">
@@ -120,102 +226,95 @@ export default function DashboardPage() {
   }
 
   return (
-    <main className="flex flex-1 flex-col">
-      <section aria-labelledby="pinned-classes">
-        <h2
-          id="pinned-classes"
-          className="border-b border-border px-6 py-4 text-xs font-medium tracking-[0.18em] text-text-muted uppercase"
-        >
-          Your pinned classes
-        </h2>
-        {!pinsReady ? (
-          <p className="px-6 py-8 text-sm text-text-muted">Loading pinned classes...</p>
-        ) : pinnedCourses.length === 0 ? (
-          <p className="flex items-center gap-2 px-6 py-8 text-sm text-text-muted">
-            <Pin className="size-4 shrink-0" aria-hidden />
-            Nothing pinned.{" "}
-            <Link href="/courses" className="text-text-primary hover:text-brand">
-              Pin a course
-            </Link>
-          </p>
-        ) : (
-          <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-            {pinnedCourses.map((item) => (
-              <ClassCell
-                key={item.id}
-                item={item}
-                className="border-border border-b last:border-b-0 sm:max-lg:[&:nth-last-child(-n+2)]:border-b-0 sm:max-lg:[&:not(:nth-child(2n))]:border-r lg:[&:nth-last-child(-n+4)]:border-b-0 lg:[&:not(:nth-child(4n))]:border-r"
-              />
-            ))}
-          </ul>
-        )}
-      </section>
+    <main className="flex flex-1 flex-col px-6 pt-8 pb-12">
+      <h1 id="your-reviews" className="text-2xl font-semibold tracking-tight text-text-primary">
+        Your Reviews
+      </h1>
+      {notice ? (
+        <p role="status" className="mt-3 text-sm text-text-muted">{notice}</p>
+      ) : null}
       <section aria-labelledby="your-reviews" className="mt-8">
-        <h2
-          id="your-reviews"
-          className="border-b border-border px-6 py-4 text-xs font-medium tracking-[0.18em] text-text-muted uppercase"
-        >
-          Your reviews
-        </h2>
         {reviews && reviews.length > 0 ? (
           <div
-            className={`${reviewColumns} hidden border-b border-border text-xs font-medium tracking-[0.14em] text-text-muted uppercase sm:grid`}
+            className={`${reviewColumns} hidden border-b border-border pb-3 text-xs font-medium tracking-[0.14em] text-text-muted uppercase sm:grid`}
           >
-            <div className="px-4 py-3">Course</div>
-            <div className="px-4 py-3">Professor</div>
-            <div className="px-4 py-3">Overall</div>
-            <div className="px-4 py-3">Difficulty</div>
-            <div className="px-4 py-3">Workload</div>
-            <div className="px-4 py-3">Comment</div>
+            <div>Course</div>
+            <div>Professor</div>
+            <div>Overall</div>
+            <div>Difficulty</div>
+            <div>Workload</div>
+            <div>Comment</div>
+            <div className="sr-only">Actions</div>
           </div>
         ) : null}
         {reviews === null ? (
-          <p className="px-6 py-8 text-sm text-text-muted">Loading your reviews...</p>
+          <p className="py-8 text-sm text-text-muted">Loading your reviews...</p>
         ) : reviews.length === 0 ? (
-          <p className="px-6 py-8 text-sm text-text-muted">You haven&apos;t written a review yet.</p>
+          <p className="py-8 text-sm text-text-muted">You haven&apos;t written a review yet.</p>
         ) : (
           <ul>
             {reviews.map((review) => (
-              <li key={review.id} className="border-b border-border last:border-b-0">
-                <Link
-                  href={`/courses/${review.courseId}`}
-                  className={`${reviewColumns} grid grid-cols-1 gap-y-1 px-6 py-4 hover:bg-surface sm:px-0 sm:py-0`}
-                >
-                  <span className="text-sm font-medium tracking-[0.04em] text-text-primary sm:px-4 sm:py-4">
-                    <span className="block">{review.code}</span>
-                    <time dateTime={review.createdAt} className="mt-1 block text-xs font-normal tracking-normal text-text-muted">
+              <li key={review.id} className="border-b border-border">
+                <div className={`${reviewColumns} grid grid-cols-1 gap-y-1 py-4`}>
+                  <span className="text-sm text-text-primary">
+                    <Link href={`/courses/${review.courseId}`} className="hover:underline">
+                      {review.code}
+                    </Link>
+                    <time dateTime={review.createdAt} className="mt-1 block max-w-[8.5rem] text-xs leading-4 text-text-muted">
                       Posted {formatReviewTimestamp(review.createdAt)}
                     </time>
-                    {review.editedAt && (
-                      <time dateTime={review.editedAt} className="mt-1 block text-xs font-normal tracking-normal text-text-muted">
+                    {review.editedAt && review.editedAt !== review.createdAt ? (
+                      <time dateTime={review.editedAt} className="mt-1 block max-w-[8.5rem] text-xs leading-4 text-text-muted">
                         Edited {formatReviewTimestamp(review.editedAt)}
                       </time>
-                    )}
+                    ) : null}
                   </span>
-                  <span className="text-sm text-text-primary sm:px-4 sm:py-4">
+                  <span className="text-sm text-text-primary">
+                    <span className="text-text-muted sm:hidden">Professor </span>
                     {review.professor}
                   </span>
-                  <span className="text-sm text-text-primary sm:px-4 sm:py-4">
+                  <span className="text-sm text-text-primary">
                     <span className="text-text-muted sm:hidden">Overall </span>
                     {review.overall}
                   </span>
-                  <span className="text-sm text-text-primary sm:px-4 sm:py-4">
+                  <span className="text-sm text-text-primary">
                     <span className="text-text-muted sm:hidden">Difficulty </span>
                     {review.difficulty}
                   </span>
-                  <span className="text-sm text-text-primary sm:px-4 sm:py-4">
+                  <span className="text-sm text-text-primary">
                     <span className="text-text-muted sm:hidden">Workload </span>
                     {review.workload}
                   </span>
-                  <span className="text-sm text-text-secondary sm:px-4 sm:py-4">
+                  <span className="text-sm text-text-primary">
+                    <span className="text-text-muted sm:hidden">Comment </span>
                     {review.comment}
                   </span>
-                </Link>
+                  <span className="mt-2 sm:mt-0 sm:justify-self-end">
+                    <button
+                      type="button"
+                      onClick={() => openEdit(review)}
+                      className="inline-flex items-center gap-2 rounded-md border border-border bg-white px-3 py-1.5 text-sm text-text-primary hover:bg-neutral-50 focus-visible:outline-2 focus-visible:outline-offset-2"
+                    >
+                      Edit
+                      <Pencil className="size-3.5" aria-hidden />
+                    </button>
+                  </span>
+                </div>
               </li>
             ))}
           </ul>
         )}
       </section>
+      {editing && user ? (
+        <CourseReviewDialog
+          review={toCourseReview(editing, user.id)}
+          courseLabel={editing.title ? `${editing.code} / ${editing.title}` : editing.code}
+          professors={professors}
+          onSave={saveReview}
+          onDelete={deleteReview}
+          onDismiss={closeEdit}
+        />
+      ) : null}
     </main>
   );
 }
