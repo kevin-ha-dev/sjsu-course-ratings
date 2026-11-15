@@ -1,8 +1,9 @@
 import { ChevronDown, Info } from "lucide-react";
 
 import type { CourseReview } from "@/lib/course-review-data";
+import Link from "next/link";
 
-export function CourseDetails({ reviews, professors }: { reviews: CourseReview[]; professors: string[] }) {
+export function CourseDetails({ reviews, professors }: { reviews: CourseReview[]; professors: { id: string; name: string }[] }) {
   const count = reviews.length;
   const average = (field: "difficulty" | "workload" | "careerRelevance" | "gradeLeniency") => {
     const scores = reviews.map((review) => review[field]).filter((value): value is number => typeof value === "number" && Number.isFinite(value) && value >= 1 && value <= 5);
@@ -63,7 +64,21 @@ export function CourseDetails({ reviews, professors }: { reviews: CourseReview[]
           ))}
           <div className="col-span-2 min-w-0">
             <dt className="text-xs text-[#555]">Professors</dt>
-            <dd className="mt-1 break-words">{professors.length ? professors.join(", ") : "None listed"}</dd>
+            <dd className="mt-1 break-words">
+              {professors.length
+                ? professors.map((professor, index) => (
+                  <span key={professor.id}>
+                    {index > 0 ? ", " : ""}
+                    <Link
+                      href={`/professors/${professor.id}`}
+                      className="underline underline-offset-4"
+                    >
+                      {professor.name}
+                    </Link>
+                  </span>
+                ))
+              : "None listed"}
+            </dd>
           </div>
         </dl>
       </div>

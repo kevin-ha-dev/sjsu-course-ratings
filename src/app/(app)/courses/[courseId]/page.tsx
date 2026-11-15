@@ -32,7 +32,7 @@ async function professorsForCourse(code: string) {
   const supabase = createClient();
   const { data, error } = await supabase
     .from("course_offerings")
-    .select("professors!inner(name), courses!inner(department, course_number)")
+    .select("professors!inner(id, name), courses!inner(department, course_number)")
     .ilike("courses.department", parts.department)
     .ilike("courses.course_number", parts.courseNumber);
 
@@ -40,15 +40,22 @@ async function professorsForCourse(code: string) {
     throw new Error(error.message);
   }
 
-  const names = new Set<string>();
+  const professors = new Map<string, { id: string; name: string }>();
+
   for (const row of data ?? []) {
-    const professor = Array.isArray(row.professors) ? row.professors[0] : row.professors;
-    if (typeof professor?.name === "string" && professor.name.trim()) {
-      names.add(professor.name.trim());
+    const professor = Array.isArray(row.professors)
+      ? row.professors[0]
+      : row.professors;
+
+    if (professor?.id != null && typeof professor.name === "string" && professor.name.trim()) {
+      const id = String(professor.id);
+      professors.set(id, { id, name: professor.name.trim() });
     }
   }
 
-  return [...names].sort((left, right) => left.localeCompare(right));
+  return [...professors.values()].sort((left, right) =>
+    left.name.localeCompare(right.name)
+  );
 }
 
 export default async function CoursePage({
@@ -62,5 +69,11 @@ export default async function CoursePage({
 
   const professors = await professorsForCourse(course.code);
 
-  return <CourseReviewPage key={course.id} course={{ ...course, professors }} />;
+  return (
+  <CourseReviewPage
+    key={course.id}
+    course={{ ...course, professors: professors.map(({ name }) => name) }}
+    professorLinks={professors}
+  />
+);
 }

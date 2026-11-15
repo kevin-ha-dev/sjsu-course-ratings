@@ -12,7 +12,13 @@ import { StarRating } from "@/components/star-rating";
 import type { Course, CourseReview, ReviewValues } from "@/lib/course-review-data";
 import { createClient } from "@/lib/supabase/client";
 
-export function CourseReviewPage({ course }: { course: Course }) {
+export function CourseReviewPage({
+  course,
+  professorLinks,
+}: {
+  course: Course;
+  professorLinks: { id: string; name: string }[];
+}) {
   const [reviews, setReviews] = useState<CourseReview[]>([]);
   const [dialog, setDialog] = useState<{ review: CourseReview | null } | null>(null);
   const [notice, setNotice] = useState("");
@@ -151,7 +157,7 @@ export function CourseReviewPage({ course }: { course: Course }) {
           </div>
         </header>
         <CourseReviewSummary key={JSON.stringify(reviews)} reviews={reviews} />
-        <CourseDetails reviews={reviews} professors={course.professors} />
+        <CourseDetails reviews={reviews} professors={professorLinks} />
         <section aria-labelledby="reviews-title" className="mt-6">
           <div className="mb-2 flex min-h-10 flex-wrap items-center justify-between gap-x-4 gap-y-2">
             <div className="flex items-baseline gap-2">
