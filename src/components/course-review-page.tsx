@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import { CourseDetails } from "@/components/course-details";
 import { CourseReviewDialog } from "@/components/course-review-dialog";
 import { CourseReviewItem } from "@/components/course-review-item";
-import { CourseReviewSummary } from "@/components/course-review-summary";
+// import { CourseReviewSummary } from "@/components/course-review-summary";
 import { StarRating } from "@/components/star-rating";
 import type { Course, CourseReview, ReviewValues } from "@/lib/course-review-data";
 import { createClient } from "@/lib/supabase/client";
@@ -156,7 +156,7 @@ export function CourseReviewPage({
             <span>{difficulty === null ? "Difficulty not rated" : `${difficulty}% difficulty`}</span>
           </div>
         </header>
-        <CourseReviewSummary key={JSON.stringify(reviews)} reviews={reviews} />
+        {/* <CourseReviewSummary key={JSON.stringify(reviews)} reviews={reviews} /> */}
         <CourseDetails reviews={reviews} professors={professorLinks} />
         <section aria-labelledby="reviews-title" className="mt-6">
           <div className="mb-2 flex min-h-10 flex-wrap items-center justify-between gap-x-4 gap-y-2">
