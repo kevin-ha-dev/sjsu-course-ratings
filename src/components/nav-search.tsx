@@ -34,11 +34,11 @@ export function NavSearch() {
   return (
     <form
       role="search"
-      className="relative ml-11 w-[28rem] max-w-[calc(100%-2.75rem)]"
+      className="relative flex w-full max-w-[28rem] min-w-0 items-center gap-2"
       onSubmit={(event) => event.preventDefault()}
     >
       <BackButton />
-      <div className="relative w-full">
+      <div className="relative min-w-0 flex-1">
         <label htmlFor="nav-search" className="sr-only">
           Search courses
         </label>

@@ -97,8 +97,14 @@ export function ProfileMenu() {
       >
         {image ? (
           // Google profile photos are remote URLs that are not configured for next/image.
+          // lh3.googleusercontent.com returns an HTML error when the request includes a Referer.
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={image} alt="" className="size-full object-cover" />
+          <img
+            src={image}
+            alt=""
+            referrerPolicy="no-referrer"
+            className="size-full object-cover"
+          />
         ) : null}
       </button>
       {open ? (

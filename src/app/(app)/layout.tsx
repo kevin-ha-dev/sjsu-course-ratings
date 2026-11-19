@@ -6,9 +6,9 @@ import { ProfileMenu } from "@/components/profile-menu";
 export default function AppLayout({ children }: LayoutProps<"/">) {
   return (
     <PinnedCoursesProvider>
-      <div className="flex min-h-full flex-1">
+      <div className="flex h-dvh overflow-hidden">
         <AppSidebar />
-        <div className="flex min-w-0 flex-1 flex-col">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto">
           <header className="flex items-center gap-4 border-b border-border bg-[#fafafa] px-6 py-5">
             <NavSearch />
             <div className="ml-auto">

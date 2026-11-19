@@ -2,7 +2,6 @@
 
 import {
   BookOpen,
-  ChevronDown,
   ChevronLeft,
   ChevronRight,
   LayoutDashboard,
@@ -57,29 +56,27 @@ export function AppSidebar() {
     )}
     <aside
       onKeyDown={(event) => { if (event.key === "Escape") setMobileExpanded(false); }}
-      className={`flex shrink-0 flex-col border-r border-border bg-[#000000] transition-[width] duration-200 ${
+      className={`flex h-full min-h-0 shrink-0 flex-col overflow-hidden border-r border-border bg-background transition-[width] duration-200 ${
         collapsed ? "w-16" : "w-56"
-      } ${compactViewport ? mobileExpanded ? "fixed inset-y-0 left-0 z-40" : "sticky top-0 h-dvh self-start" : ""}`}
+      } ${compactViewport && mobileExpanded ? "fixed inset-y-0 left-0 z-40" : ""}`}
     >
-      <div className="flex items-center border-b border-[#555555] px-3 py-5">
+      <div className="flex items-center border-b border-border px-3 py-5">
         {collapsed ? (
           <span
-            className="flex size-9 w-full items-center justify-center text-xs font-semibold text-white"
+            className="flex size-9 w-full items-center justify-center text-xs font-semibold text-text-primary"
             title={title}
           >
             CS
           </span>
         ) : (
-          <div className="flex h-9 w-full items-center gap-2 text-sm font-medium text-text-primary">
-            <span className="min-w-0 text-white truncate font-bold">{"SJSU "}</span>
-            <span className="min-w-0 text-white truncate">{"Course Ratings"}</span>
-            <ChevronDown className="size-4 shrink-0 text-white" aria-hidden />
+          <div className="flex h-9 w-full items-center justify-center text-sm font-medium text-text-primary">
+            <span className="min-w-0 truncate text-center">{title}</span>
           </div>
         )}
       </div>
       <nav
         aria-label="Primary"
-        className={`flex flex-1 flex-col gap-1 py-4 text-sm ${
+        className={`flex min-h-0 flex-1 flex-col gap-1 py-4 text-sm ${
           collapsed ? "items-center px-2" : "px-3"
         }`}
       >
@@ -94,9 +91,9 @@ export function AppSidebar() {
               onClick={() => setMobileExpanded(false)}
               aria-current={current ? "page" : undefined}
               title={collapsed ? link.label : undefined}
-              className={`flex items-center rounded-full font-medium text-white underline-offset-4 transition-colors hover:bg-white/10 hover:text-white ${
+              className={`flex items-center rounded-full font-medium underline-offset-4 transition-colors hover:bg-surface-muted hover:text-brand ${
                 collapsed ? "size-9 justify-center" : "gap-2 px-3 py-2"
-              }`}
+              } ${current ? "text-brand" : "text-text-primary"}`}
             >
               <Icon className="size-4 shrink-0" aria-hidden />
               {collapsed ? (
@@ -136,11 +133,11 @@ export function AppSidebar() {
                 className="mt-1 flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto"
               >
                 {pinnedCourses.map((course) => (
-                  <li key={course.id} className="flex items-center rounded-full pr-1 hover:bg-white/10">
+                  <li key={course.id} className="flex items-center rounded-full pr-1 hover:bg-surface-muted">
                     <Link
                       href={`/courses/${course.id}`}
                       onClick={() => setMobileExpanded(false)}
-                      className="flex min-w-0 flex-1 items-center gap-2 px-3 py-2 text-white"
+                      className="flex min-w-0 flex-1 items-center gap-2 px-3 py-2 text-text-primary"
                     >
                       <Pin className="size-4 shrink-0 fill-current" aria-hidden />
                       <span className="truncate">{course.code}</span>
@@ -149,7 +146,7 @@ export function AppSidebar() {
                       type="button"
                       aria-label={`Unpin ${course.code}`}
                       onClick={() => toggle(course)}
-                      className="flex size-7 shrink-0 items-center justify-center rounded-full text-white/60 hover:bg-white/15 hover:text-white"
+                      className="flex size-7 shrink-0 items-center justify-center rounded-full text-text-muted hover:bg-surface-muted hover:text-text-primary"
                     >
                       <X className="size-3.5" aria-hidden />
                     </button>
